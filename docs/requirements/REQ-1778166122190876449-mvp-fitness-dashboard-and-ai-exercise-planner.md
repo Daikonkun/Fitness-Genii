@@ -1,7 +1,7 @@
 # MVP fitness dashboard and AI exercise planner
 
 **ID**: REQ-1778166122190876449  
-**Status**: CODE_REVIEW  
+**Status**: MERGED  
 **Priority**: high  
 **Created**: 2026-05-07T15:02:02Z  
 
@@ -63,5 +63,5 @@ None.
 
 * **Linked Worktree**: feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner
 * **Branch**: feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner
-* **Merged**: No
+* **Merged**: Yes
 * **Deployed**: No
