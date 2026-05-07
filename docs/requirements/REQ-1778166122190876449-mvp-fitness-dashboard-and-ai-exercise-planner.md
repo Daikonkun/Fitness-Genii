@@ -1,7 +1,7 @@
 # MVP fitness dashboard and AI exercise planner
 
 **ID**: REQ-1778166122190876449  
-**Status**: IN_PROGRESS  
+**Status**: CODE_REVIEW  
 **Priority**: high  
 **Created**: 2026-05-07T15:02:02Z  
 
