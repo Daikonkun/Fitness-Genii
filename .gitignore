@@ -11,6 +11,9 @@ env/
 # Build outputs
 dist/
 build/
+.next/
+out/
+tsconfig.tsbuildinfo
 *.egg-info/
 .pytest_cache/
 
