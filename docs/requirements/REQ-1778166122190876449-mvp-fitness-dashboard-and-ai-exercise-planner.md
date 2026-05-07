@@ -11,16 +11,16 @@ Build the Fitness Genii MVP as a Vercel-ready web app backed by Supabase. Admins
 
 ## Success Criteria
 
-- [ ] Supabase-backed authentication supports admin-created user accounts, with application pages protected from unauthenticated access.
-- [ ] Authenticated users have a single responsive dashboard for body status, exercise target inputs, AI plan generation/regeneration, weight trend, and exercise records.
-- [ ] Body status captures gender, age, height, weight, and optional injury notes; weight entries are stored over time for charting.
-- [ ] Exercise target captures type toggle, goal description, available exercise time, optional focus area, and equipment.
-- [ ] Daily plan generation calls OpenRouter with default model `openai/gpt-5.5` and a prompt that includes body status, target, injury, equipment, prior exercise records, and weight history when weight loss is selected.
-- [ ] Generated plans are bilingual English/Chinese and include move descriptions plus time, reps, or cycle guidance for each item.
-- [ ] Users can provide feedback and regenerate the daily plan with that feedback included in the next OpenRouter prompt.
-- [ ] Users can mark a generated daily plan as executed with completion percentage; daily exercise records store activity details, duration, completion status, and unfinished plans.
-- [ ] Plans not marked executed by `23:59:59` Asia/Hong_Kong are modeled for automatic unfinished recording through a Supabase/Vercel scheduled job.
-- [ ] The project includes free-tier-oriented Vercel and Supabase setup documentation, environment variable examples, and a migration schema.
+- [x] Supabase-backed authentication supports admin-created user accounts, with application pages protected from unauthenticated access.
+- [x] Authenticated users have a single responsive dashboard for body status, exercise target inputs, AI plan generation/regeneration, weight trend, and exercise records.
+- [x] Body status captures gender, age, height, weight, and optional injury notes; weight entries are stored over time for charting.
+- [x] Exercise target captures type toggle, goal description, available exercise time, optional focus area, and equipment.
+- [x] Daily plan generation calls OpenRouter with default model `openai/gpt-5.5` and a prompt that includes body status, target, injury, equipment, prior exercise records, and weight history when weight loss is selected.
+- [x] Generated plans are bilingual English/Chinese and include move descriptions plus time, reps, or cycle guidance for each item.
+- [x] Users can provide feedback and regenerate the daily plan with that feedback included in the next OpenRouter prompt.
+- [x] Users can mark a generated daily plan as executed with completion percentage; daily exercise records store activity details, duration, completion status, and unfinished plans.
+- [x] Plans not marked executed by `23:59:59` Asia/Hong_Kong are modeled for automatic unfinished recording through a Supabase/Vercel scheduled job.
+- [x] The project includes free-tier-oriented Vercel and Supabase setup documentation, environment variable examples, and a migration schema.
 
 ## Technical Notes
 
@@ -41,6 +41,13 @@ Build the Fitness Genii MVP as a Vercel-ready web app backed by Supabase. Admins
 3. Implement changes in the files/scripts referenced by the requirement spec.
 4. Run `./scripts/regenerate-docs.sh` to update manifests and generated docs.
 5. Validate with `./scripts/show-requirement.sh REQ-1778166122190876449` and verify success criteria are met.
+
+## Verification
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `curl -I http://localhost:3000/login`
 
 **Last updated**: 2026-05-07T15:02:39Z
 
