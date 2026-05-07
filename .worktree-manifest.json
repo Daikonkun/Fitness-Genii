@@ -1,5 +1,17 @@
 {
   "$schema": ".worktree-manifest.schema.json",
   "version": "1.0",
-  "worktrees": []
+  "worktrees": [
+    {
+      "id": "feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner",
+      "path": "/Users/bluoaa/Desktop/Coding/Fitiness-Genii/.worktrees/feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner",
+      "branch": "feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner",
+      "baseBranch": "main",
+      "requirementIds": [
+        "REQ-1778166122190876449"
+      ],
+      "createdAt": "2026-05-07T15:02:38Z",
+      "status": "ACTIVE"
+    }
+  ]
 }

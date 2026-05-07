@@ -1,7 +1,7 @@
 # MVP fitness dashboard and AI exercise planner
 
 **ID**: REQ-1778166122190876449  
-**Status**: PROPOSED  
+**Status**: IN_PROGRESS  
 **Priority**: high  
 **Created**: 2026-05-07T15:02:02Z  
 
@@ -30,6 +30,20 @@ Build the Fitness Genii MVP as a Vercel-ready web app backed by Supabase. Admins
 - Keep OpenRouter calls server-side only. Required env vars: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and a server-only Supabase service role key for scheduled unfinished-plan maintenance.
 - Add a Vercel cron endpoint for unfinished-plan finalization; MVP should also expose a manual-safe implementation so the behavior is clear before deployment credentials exist.
 
+
+## Development Plan
+
+1. Review Description, Success Criteria, and Technical Notes in `docs/requirements/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner.md`.
+   - **Summary**: Build the Fitness Genii MVP as a Vercel-ready web app backed by Supabase. Admins
+   - **Key criteria**: - [ ] Supabase-backed authentication supports admin-created user accounts, with application pages pr
+2. Analyse Technical Notes and identify implementation approach.
+   - **Notes**: - Use Next.js App Router with TypeScript for a Vercel-friendly frontend and server API routes.
+3. Implement changes in the files/scripts referenced by the requirement spec.
+4. Run `./scripts/regenerate-docs.sh` to update manifests and generated docs.
+5. Validate with `./scripts/show-requirement.sh REQ-1778166122190876449` and verify success criteria are met.
+
+**Last updated**: 2026-05-07T15:02:39Z
+
 ## Dependencies
 
 None.
@@ -40,7 +54,7 @@ None.
 
 ---
 
-* **Linked Worktree**: None yet
-* **Branch**: None yet
+* **Linked Worktree**: feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner
+* **Branch**: feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner
 * **Merged**: No
 * **Deployed**: No

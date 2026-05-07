@@ -2,13 +2,13 @@
 
 Kanban-style view of all requirements and their current state.
 
-## PROPOSED (1)
+## PROPOSED (0)
+
+
+## IN_PROGRESS (1)
 
 * REQ-1778166122190876449: MVP fitness dashboard and AI exercise planner (priority: high)
-  - Worktree: none
-
-## IN_PROGRESS (0)
-
+  - Worktree: feature/REQ-1778166122190876449-mvp-fitness-dashboard-and-ai-exercise-planner
 
 ## CODE_REVIEW (0)
 
@@ -32,5 +32,5 @@ Kanban-style view of all requirements and their current state.
 - Total Requirements: 1
 - Deployed: 0 (0%)
 - Merged (awaiting deploy): 0
-- In Progress: 0
+- In Progress: 1
 - Blocked: 0
