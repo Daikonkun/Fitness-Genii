@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+venv/
+env/
+.venv/
+.env.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git worktrees
+# Note: The parent directory contains worktree folders like ../feature/REQ-001-*
+# They are NOT tracked in this repo
+
+# VS Code extensions
+extensions/
+
+# E2e screenshot current runs (baselines are committed)
+docs/e2e-screenshots/*/current/
+
+# Logs
+*.log
+logs/
+
+# Vibe config (project-specific, may contain local overrides)
+# .vibe-config.json is tracked by default; uncomment to ignore local overrides:
+# .vibe-config.local.json
+.vibe-config.local.json
+
+# Misc
+.env
+.env.*.local

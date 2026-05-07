@@ -1,0 +1,29 @@
+{
+  "$schema": ".vibe-config.schema.json",
+  "contextWindowLimit": 128000,
+  "compactionThreshold": 0.80,
+  "preservedTurns": 3,
+  "model": "default",
+  "modelOverrides": {
+    "gpt-4o": {
+      "contextWindowLimit": 128000,
+      "compactionThreshold": 0.80,
+      "preservedTurns": 3
+    },
+    "gpt-4o-mini": {
+      "contextWindowLimit": 128000,
+      "compactionThreshold": 0.75,
+      "preservedTurns": 2
+    },
+    "claude-sonnet-4": {
+      "contextWindowLimit": 200000,
+      "compactionThreshold": 0.80,
+      "preservedTurns": 4
+    },
+    "claude-haiku-3.5": {
+      "contextWindowLimit": 200000,
+      "compactionThreshold": 0.75,
+      "preservedTurns": 2
+    }
+  }
+}

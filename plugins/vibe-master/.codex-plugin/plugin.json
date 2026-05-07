@@ -1,0 +1,39 @@
+{
+  "name": "vibe-master",
+  "version": "0.1.0",
+  "description": "Codex command surface for Vibe Master requirement/worktree workflows.",
+  "author": {
+    "name": "Vibe Master"
+  },
+  "license": "MIT",
+  "keywords": [
+    "vibe-master",
+    "requirements",
+    "worktrees",
+    "codex",
+    "workflow"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Vibe Master",
+    "shortDescription": "Requirement and worktree orchestration commands for Codex",
+    "longDescription": "Exposes Vibe Master lifecycle workflows as Codex plugin commands that map to existing scripts and prompt contracts in this repository.",
+    "developerName": "Vibe Master",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Resume my Vibe Master project workflow",
+      "Start work on a requirement",
+      "Run Vibe Master code review"
+    ],
+    "websiteURL": "https://github.com/bluoaa/vibe-master",
+    "privacyPolicyURL": "https://github.com/bluoaa/vibe-master",
+    "termsOfServiceURL": "https://github.com/bluoaa/vibe-master",
+    "screenshots": [],
+    "brandColor": "#0B7285"
+  }
+}

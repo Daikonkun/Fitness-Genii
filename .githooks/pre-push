@@ -1,0 +1,15 @@
+#!/bin/bash
+# Local pre-push guard: fail if generated requirement docs drift from manifest data.
+
+set -euo pipefail
+
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+CHECK_SCRIPT="$PROJECT_ROOT/scripts/check-docs-sync.sh"
+
+if [ ! -f "$CHECK_SCRIPT" ]; then
+  echo "Warning: docs sync guard script not found, skipping: scripts/check-docs-sync.sh" >&2
+  exit 0
+fi
+
+echo "Running docs sync guard (pre-push)..."
+bash "$CHECK_SCRIPT"

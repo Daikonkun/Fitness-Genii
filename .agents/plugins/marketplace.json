@@ -1,0 +1,20 @@
+{
+  "name": "vibe-master-local",
+  "interface": {
+    "displayName": "Vibe Master Local"
+  },
+  "plugins": [
+    {
+      "name": "vibe-master",
+      "source": {
+        "source": "local",
+        "path": "./plugins/vibe-master"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}

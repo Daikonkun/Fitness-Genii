@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Requirement Manifest",
+  "description": "Structured manifest of all product requirements for the vibe project",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "default": "1.0"
+    },
+    "projectName": {
+      "type": "string",
+      "description": "Name of the project"
+    },
+    "requiresDeployment": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this project requires a deployment step after merge. When false, requirements are auto-completed (DEPLOYED) at merge time."
+    },
+    "requirements": {
+      "type": "array",
+      "description": "Array of all requirements",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REQ-[0-9]{10,}$",
+            "description": "Unique requirement ID (REQ-{timestamp})"
+          },
+          "name": {
+            "type": "string",
+            "description": "Short name of the requirement"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of what's needed"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PROPOSED",
+              "IN_PROGRESS",
+              "CODE_REVIEW",
+              "MERGED",
+              "DEPLOYED",
+              "BLOCKED",
+              "BACKLOG",
+              "CANCELLED"
+            ],
+            "description": "Current lifecycle status"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ],
+            "description": "Priority level"
+          },
+          "worktreeId": {
+            "type": "string",
+            "description": "Associated worktree ID (if any)"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of requirement IDs this depends on"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the requirement was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the requirement was last updated"
+          },
+          "deployedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When deployed to production (if applicable)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes or context"
+          },
+          "statusHistory": {
+            "type": "array",
+            "description": "Audit history of requirement status transitions",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "enum": [
+                    "PROPOSED",
+                    "IN_PROGRESS",
+                    "CODE_REVIEW",
+                    "MERGED",
+                    "DEPLOYED",
+                    "BLOCKED",
+                    "BACKLOG",
+                    "CANCELLED"
+                  ],
+                  "description": "Previous lifecycle status"
+                },
+                "to": {
+                  "type": "string",
+                  "enum": [
+                    "PROPOSED",
+                    "IN_PROGRESS",
+                    "CODE_REVIEW",
+                    "MERGED",
+                    "DEPLOYED",
+                    "BLOCKED",
+                    "BACKLOG",
+                    "CANCELLED"
+                  ],
+                  "description": "New lifecycle status"
+                },
+                "changedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "When the transition was recorded"
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Optional audit reason for the transition"
+                }
+              },
+              "required": [
+                "from",
+                "to",
+                "changedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "status",
+          "priority",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "projectName",
+    "requirements"
+  ]
+}

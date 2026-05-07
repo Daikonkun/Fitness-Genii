@@ -1,0 +1,24 @@
+name: Docs Sync Guard
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  command-entrypoint-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate command entrypoint references
+        run: bash scripts/check-command-entrypoints.sh
+
+  docs-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate generated docs sync
+        run: bash scripts/check-docs-sync.sh

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Vibe Config",
+  "description": "Configuration for Vibe Master auto-compaction and other project settings.",
+  "type": "object",
+  "properties": {
+    "contextWindowLimit": {
+      "type": "integer",
+      "description": "Default token limit for the LLM context window.",
+      "minimum": 1000,
+      "default": 128000
+    },
+    "compactionThreshold": {
+      "type": "number",
+      "description": "Fraction of context window that triggers auto-compaction (0.0–1.0).",
+      "minimum": 0.1,
+      "maximum": 1.0,
+      "default": 0.80
+    },
+    "preservedTurns": {
+      "type": "integer",
+      "description": "Number of recent conversation turns to preserve during compaction.",
+      "minimum": 1,
+      "default": 3
+    },
+    "model": {
+      "type": "string",
+      "description": "Current active model name (used to look up modelOverrides).",
+      "default": "default"
+    },
+    "modelOverrides": {
+      "type": "object",
+      "description": "Per-model overrides for context window settings.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "contextWindowLimit": { "type": "integer", "minimum": 1000 },
+          "compactionThreshold": { "type": "number", "minimum": 0.1, "maximum": 1.0 },
+          "preservedTurns": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["contextWindowLimit", "compactionThreshold", "preservedTurns"]
+}

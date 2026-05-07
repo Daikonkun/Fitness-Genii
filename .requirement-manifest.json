@@ -1,0 +1,7 @@
+{
+  "$schema": ".requirement-manifest.schema.json",
+  "version": "1.0",
+  "projectName": "Fitness Genii",
+  "requirements": [],
+  "requiresDeployment": true
+}

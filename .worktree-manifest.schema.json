@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Worktree Manifest",
+  "description": "Structured mapping of git worktrees to requirements",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0"
+    },
+    "worktrees": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique worktree ID (usually the branch name)"
+          },
+          "path": {
+            "type": "string",
+            "description": "Filesystem path to the worktree"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Git branch name"
+          },
+          "baseBranch": {
+            "type": "string",
+            "description": "Branch from which this worktree was created (main/develop)"
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of requirement IDs this worktree implements"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mergedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When merged to base branch (if applicable)"
+          },
+          "prunedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When pruned from disk (if applicable)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "MERGED",
+              "ABANDONED",
+              "PRUNED"
+            ],
+            "description": "Current worktree status"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "branch",
+          "baseBranch",
+          "requirementIds",
+          "createdAt",
+          "status"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "worktrees"
+  ]
+}
