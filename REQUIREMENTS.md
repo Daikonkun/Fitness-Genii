@@ -4,9 +4,10 @@ Auto-generated summary of all product requirements. For detailed specs, see indi
 
 | ID | Name | Status | Priority | Worktree | Created | Updated |
 |---|---|---|---|---|---|---|
+| REQ-1778166122190876449 | MVP fitness dashboard and AI exercise planner | PROPOSED | high | — | 2026-05-07 | 2026-05-07 |
 
 ## Status Breakdown
-- **Proposed**: 0
+- **Proposed**: 1
 - **In Progress**: 0
 - **Code Review**: 0
 - **Merged**: 0
@@ -20,6 +21,6 @@ Use `/add-requirement "Feature name" "Description"` to submit requirements.
 
 ---
 
-* Last updated: 1970-01-01T00:00:00Z
+* Last updated: 2026-05-07T15:02:02Z
 * Structured data: See `.requirement-manifest.json`
 * Worktree mapping: See `.worktree-manifest.json`

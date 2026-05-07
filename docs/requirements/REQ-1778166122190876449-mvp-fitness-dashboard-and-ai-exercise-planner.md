@@ -1,0 +1,46 @@
+# MVP fitness dashboard and AI exercise planner
+
+**ID**: REQ-1778166122190876449  
+**Status**: PROPOSED  
+**Priority**: high  
+**Created**: 2026-05-07T15:02:02Z  
+
+## Description
+
+Build the Fitness Genii MVP as a Vercel-ready web app backed by Supabase. Admins assign user logins. Authenticated users land on a one-page dashboard where they can maintain body status (gender, age, height, weight, injury), set exercise targets (type toggle, goal description, exercise time, focus, equipment), view weight curve and exercise records, generate a customized bilingual English/Chinese daily exercise plan through OpenRouter using default model openai/gpt-5.5, provide feedback for regeneration, and mark plan execution percentage. Exercise records must store daily activities, duration, plan completion status, and unfinished plans when not executed by end of day at 23:59:59 Asia/Hong_Kong. MVP should include Supabase schema/migrations, OpenRouter API integration, responsive modern UI, and deployment documentation for free-tier Vercel/Supabase.
+
+## Success Criteria
+
+- [ ] Supabase-backed authentication supports admin-created user accounts, with application pages protected from unauthenticated access.
+- [ ] Authenticated users have a single responsive dashboard for body status, exercise target inputs, AI plan generation/regeneration, weight trend, and exercise records.
+- [ ] Body status captures gender, age, height, weight, and optional injury notes; weight entries are stored over time for charting.
+- [ ] Exercise target captures type toggle, goal description, available exercise time, optional focus area, and equipment.
+- [ ] Daily plan generation calls OpenRouter with default model `openai/gpt-5.5` and a prompt that includes body status, target, injury, equipment, prior exercise records, and weight history when weight loss is selected.
+- [ ] Generated plans are bilingual English/Chinese and include move descriptions plus time, reps, or cycle guidance for each item.
+- [ ] Users can provide feedback and regenerate the daily plan with that feedback included in the next OpenRouter prompt.
+- [ ] Users can mark a generated daily plan as executed with completion percentage; daily exercise records store activity details, duration, completion status, and unfinished plans.
+- [ ] Plans not marked executed by `23:59:59` Asia/Hong_Kong are modeled for automatic unfinished recording through a Supabase/Vercel scheduled job.
+- [ ] The project includes free-tier-oriented Vercel and Supabase setup documentation, environment variable examples, and a migration schema.
+
+## Technical Notes
+
+- Use Next.js App Router with TypeScript for a Vercel-friendly frontend and server API routes.
+- Use Supabase Auth for assigned logins; the app admin creates users from the Supabase dashboard or admin API outside the public signup flow.
+- Store profile/body status, weight logs, exercise targets, generated daily plans, and exercise records in Supabase Postgres with RLS policies scoped to `auth.uid()`.
+- Keep OpenRouter calls server-side only. Required env vars: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and a server-only Supabase service role key for scheduled unfinished-plan maintenance.
+- Add a Vercel cron endpoint for unfinished-plan finalization; MVP should also expose a manual-safe implementation so the behavior is clear before deployment credentials exist.
+
+## Dependencies
+
+None.
+
+## Worktree
+
+(Will be populated when work starts: feature/REQ-ID-slug)
+
+---
+
+* **Linked Worktree**: None yet
+* **Branch**: None yet
+* **Merged**: No
+* **Deployed**: No
