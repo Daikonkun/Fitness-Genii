@@ -25,6 +25,7 @@ build/
 # Git worktrees
 # Note: The parent directory contains worktree folders like ../feature/REQ-001-*
 # They are NOT tracked in this repo
+.worktrees/
 
 # VS Code extensions
 extensions/
