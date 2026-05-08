@@ -48,3 +48,4 @@ logs/
 # Misc
 .env
 .env.*.local
+.vercel
