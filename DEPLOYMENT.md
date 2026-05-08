@@ -4,7 +4,7 @@
 
 1. Create a free-tier Supabase project.
 2. In Authentication settings, disable public self-signup if users must only be assigned by the app admin.
-3. Apply `supabase/migrations/20260507150500_initial_fitness_genii.sql` with the Supabase SQL editor or the Supabase CLI.
+3. Apply the SQL files in `supabase/migrations/` in filename order with the Supabase SQL editor or the Supabase CLI.
 4. Create users from the Supabase dashboard under Authentication. Those assigned users can sign in at `/login`.
 5. Copy the project URL, anon key, and service role key into Vercel environment variables.
 
