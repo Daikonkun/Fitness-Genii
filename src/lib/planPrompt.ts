@@ -1,11 +1,11 @@
-import type { BodyStatus, ExerciseRecord, ExerciseTarget, WeightLog } from "@/lib/types";
+import type { BodyStatus, ExerciseTarget, StructuredPlan, WeightLog } from "@/lib/types";
 
 type PromptInput = {
   bodyStatus: BodyStatus | null;
   target: ExerciseTarget | null;
   weightLogs: WeightLog[];
-  records: ExerciseRecord[];
-  previousPlan: string | null;
+  historyDigest: Record<string, unknown>;
+  previousPlan: StructuredPlan | string | null;
   feedback?: string;
   todayHk: string;
 };
@@ -22,19 +22,19 @@ export function buildPlanPrompt(input: PromptInput) {
     {
       role: "system" as const,
       content:
-        "You are a careful bilingual fitness coach. Generate practical daily exercise plans that avoid aggravating injuries, fit the user's equipment, and stay within the requested session length. Return concise Markdown only."
+        "You are a careful bilingual fitness coach. Generate practical daily exercise plans that avoid aggravating injuries, fit the user's equipment, and stay within the requested session length. Return only the requested structured data."
     },
     {
       role: "user" as const,
       content: `Create today's customized exercise plan for ${input.todayHk} in both English and Chinese.
 
-Required output:
-- Title in English and Chinese.
-- Warm-up, main workout, and cool-down sections.
-- Each move must include a brief English description, a brief Chinese description, and time, reps, or cycle guidance.
+Required plan behavior:
+- Include a title in English and Chinese.
+- Include warm-up, main workout, and cool-down sections when appropriate.
+- Each move must have English and Chinese titles and descriptions, a concise time/reps/cycle prescription, and planned_seconds (use 0 only when no meaningful time can be estimated).
 - Include safer substitutions when injury notes imply risk.
 - Keep total planned exercise time within the user's requested minutes.
-- End with a short completion logging suggestion.
+- Include a short completion logging suggestion in both languages.
 
 User body status:
 ${JSON.stringify(input.bodyStatus, null, 2)}
@@ -42,13 +42,13 @@ ${JSON.stringify(input.bodyStatus, null, 2)}
 Exercise target:
 ${JSON.stringify(input.target, null, 2)}
 
-Recent exercise records:
-${JSON.stringify(input.records, null, 2)}
+Recent measured exercise history (bounded digest):
+${JSON.stringify(input.historyDigest, null, 2)}
 
 ${weightLossContext}
 
 Previous plan, if any:
-${input.previousPlan ?? "None"}
+${input.previousPlan ? JSON.stringify(input.previousPlan, null, 2) : "None"}
 
 User feedback for regeneration:
 ${input.feedback?.trim() || "None"}

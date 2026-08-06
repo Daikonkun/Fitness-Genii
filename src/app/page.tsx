@@ -2,7 +2,15 @@ import { redirect } from "next/navigation";
 import { Dashboard } from "@/components/Dashboard";
 import { getHongKongDate } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
-import type { BodyStatus, DailyPlan, ExerciseRecord, ExerciseTarget, WeightLog } from "@/lib/types";
+import type {
+  BodyStatus,
+  DailyPlan,
+  ExerciseInterval,
+  ExerciseRecord,
+  ExerciseTarget,
+  PlanItem,
+  WeightLog
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +56,28 @@ export default async function Home() {
       .select("*")
       .eq("user_id", user.id)
       .eq("plan_date", todayHk)
+      .eq("is_current", true)
       .maybeSingle()
   ]);
+
+  const todayPlan = (todayPlanResult.data as DailyPlan | null) ?? null;
+  const todayItemsResult = todayPlan
+    ? await supabase
+        .from("plan_items")
+        .select("*")
+        .eq("plan_id", todayPlan.id)
+        .order("section_position", { ascending: true })
+        .order("item_position", { ascending: true })
+    : { data: [] };
+  const todayPlanItems = (todayItemsResult.data ?? []) as PlanItem[];
+  const itemIds = todayPlanItems.map((item) => item.id);
+  const todayIntervalsResult = itemIds.length
+    ? await supabase
+        .from("exercise_intervals")
+        .select("*")
+        .in("plan_item_id", itemIds)
+        .order("started_at", { ascending: true })
+    : { data: [] };
 
   return (
     <Dashboard
@@ -61,7 +89,9 @@ export default async function Home() {
         target: (targetResult.data as ExerciseTarget | null) ?? null,
         weightLogs: ((weightLogsResult.data as WeightLog[] | null) ?? []).reverse(),
         records: (recordsResult.data as ExerciseRecord[] | null) ?? [],
-        todayPlan: (todayPlanResult.data as DailyPlan | null) ?? null
+        todayPlan,
+        todayPlanItems,
+        todayIntervals: (todayIntervalsResult.data ?? []) as ExerciseInterval[]
       }}
     />
   );

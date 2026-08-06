@@ -14,7 +14,7 @@ import {
   TrendingDown,
   UserRound
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -25,7 +25,18 @@ import {
   YAxis
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
-import type { BodyStatus, DailyPlan, DashboardData, ExerciseTarget, TargetType } from "@/lib/types";
+import { formatStopwatch, workoutMetrics } from "@/lib/workout";
+import { WorkoutPlan } from "@/components/WorkoutPlan";
+import type {
+  BodyStatus,
+  DailyPlan,
+  DashboardData,
+  ExerciseInterval,
+  ExerciseRecord,
+  ExerciseTarget,
+  PlanItem,
+  TargetType
+} from "@/lib/types";
 
 type Notice = {
   type: "success" | "error";
@@ -60,14 +71,18 @@ export function Dashboard({ data }: { data: DashboardData }) {
     }
   );
   const [todayPlan, setTodayPlan] = useState<DailyPlan | null>(data.todayPlan);
+  const [planItems, setPlanItems] = useState<PlanItem[]>(data.todayPlanItems);
+  const [intervals, setIntervals] = useState<ExerciseInterval[]>(data.todayIntervals);
+  const [records, setRecords] = useState<ExerciseRecord[]>(data.records);
   const [feedback, setFeedback] = useState("");
-  const [executed, setExecuted] = useState(true);
-  const [completion, setCompletion] = useState(todayPlan?.completion_percentage ?? 80);
+  const [executed, setExecuted] = useState(false);
+  const [completion, setCompletion] = useState(todayPlan?.completion_percentage ?? 0);
   const [activitySummary, setActivitySummary] = useState("Completed today's AI exercise plan.");
   const [durationMinutes, setDurationMinutes] = useState(target.exercise_minutes);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [finishing, setFinishing] = useState(false);
 
   const chartData = useMemo(
     () =>
@@ -76,6 +91,19 @@ export function Dashboard({ data }: { data: DashboardData }) {
         weight: Number(log.weight_kg)
       })),
     [data.weightLogs]
+  );
+
+  const measuredMetrics = useMemo(
+    () => workoutMetrics(planItems, intervals),
+    [intervals, planItems]
+  );
+
+  const updateWorkoutData = useCallback(
+    (nextItems: PlanItem[], nextIntervals: ExerciseInterval[]) => {
+      setPlanItems(nextItems);
+      setIntervals(nextIntervals);
+    },
+    []
   );
 
   async function saveInputs() {
@@ -156,6 +184,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
       }
 
       setTodayPlan(payload.plan);
+      setPlanItems(payload.items ?? []);
+      setIntervals(payload.intervals ?? []);
       setFeedback("");
       setNotice({ type: "success", message: "Today's bilingual plan is ready." });
     } catch (error) {
@@ -192,28 +222,93 @@ export function Dashboard({ data }: { data: DashboardData }) {
       return;
     }
 
-    const { error: recordError } = await supabase.from("exercise_records").upsert(
-      {
-        user_id: data.userId,
-        plan_id: todayPlan.id,
-        record_date: data.todayHk,
-        activity_summary: executed
-          ? activitySummary || "Completed today's AI exercise plan."
-          : "Plan was marked unfinished by the user.",
-        duration_minutes: executed ? durationMinutes : 0,
-        completion_percentage: percentage,
-        status
-      },
-      { onConflict: "plan_id" }
-    );
+    const { data: savedRecord, error: recordError } = await supabase
+      .from("exercise_records")
+      .upsert(
+        {
+          user_id: data.userId,
+          plan_id: todayPlan.id,
+          record_date: data.todayHk,
+          activity_summary: executed
+            ? activitySummary || "Completed today's AI exercise plan."
+            : "Plan was marked unfinished by the user.",
+          duration_minutes: executed ? durationMinutes : 0,
+          duration_seconds: executed ? durationMinutes * 60 : 0,
+          completion_percentage: percentage,
+          status
+        },
+        { onConflict: "plan_id" }
+      )
+      .select("*")
+      .single();
 
     if (recordError) {
       setNotice({ type: "error", message: recordError.message });
       return;
     }
 
+    setRecords((current) => [
+      savedRecord as ExerciseRecord,
+      ...current.filter((record) => record.plan_id !== todayPlan.id)
+    ]);
     setTodayPlan({ ...todayPlan, status, completion_percentage: percentage });
     setNotice({ type: "success", message: "Exercise record saved." });
+  }
+
+  async function finishWorkout() {
+    if (!todayPlan || todayPlan.schema_version < 2) return;
+    setFinishing(true);
+    setNotice(null);
+    const supabase = createClient();
+
+    try {
+      const { data: result, error } = await supabase.rpc("finish_workout", {
+        p_plan_id: todayPlan.id,
+        p_activity_summary: activitySummary
+      });
+      if (error) throw new Error(error.message);
+
+      const metrics = result as {
+        completion_percentage: number;
+        duration_seconds: number;
+      };
+      setTodayPlan({
+        ...todayPlan,
+        status: "executed",
+        completion_percentage: metrics.completion_percentage
+      });
+
+      const itemIds = planItems.map((item) => item.id);
+      const [intervalResult, recordResult] = await Promise.all([
+        itemIds.length
+          ? supabase
+              .from("exercise_intervals")
+              .select("*")
+              .in("plan_item_id", itemIds)
+              .order("started_at", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
+        supabase.from("exercise_records").select("*").eq("plan_id", todayPlan.id).single()
+      ]);
+      if (intervalResult.error) throw new Error(intervalResult.error.message);
+      if (recordResult.error) throw new Error(recordResult.error.message);
+      setIntervals((intervalResult.data ?? []) as ExerciseInterval[]);
+      setRecords((current) => [
+        recordResult.data as ExerciseRecord,
+        ...current.filter((record) => record.plan_id !== todayPlan.id)
+      ]);
+
+      setNotice({
+        type: "success",
+        message: `Workout saved: ${metrics.completion_percentage}% complete, ${formatStopwatch(metrics.duration_seconds)} active time.`
+      });
+    } catch (error) {
+      setNotice({
+        type: "error",
+        message: error instanceof Error ? error.message : "Could not finish the workout."
+      });
+    } finally {
+      setFinishing(false);
+    }
   }
 
   return (
@@ -231,6 +326,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <div className="user-pill">
           <UserRound size={16} />
           <span>{data.userEmail}</span>
+          <a className="profile-link" href="/profile">
+            Profile
+          </a>
           <a className="icon-link" href="/auth/sign-out" aria-label="Sign out" title="Sign out">
             <LogOut size={16} />
           </a>
@@ -415,7 +513,20 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </label>
           <article className="plan-output">
             {todayPlan ? (
-              <pre>{todayPlan.plan_markdown}</pre>
+              todayPlan.schema_version >= 2 && planItems.length ? (
+                <WorkoutPlan
+                  planId={todayPlan.id}
+                  items={planItems}
+                  intervals={intervals}
+                  interactive={todayPlan.is_current && todayPlan.status !== "executed"}
+                  onDataChange={updateWorkoutData}
+                />
+              ) : (
+                <div className="legacy-plan">
+                  <span className="legacy-badge">Legacy plan · read only</span>
+                  <pre>{todayPlan.plan_markdown}</pre>
+                </div>
+              )
             ) : (
               <div className="empty-state">
                 <Sparkles size={22} />
@@ -430,52 +541,79 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <CalendarCheck size={18} />
             <h2>Execution record</h2>
           </div>
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={executed}
-              onChange={(event) => setExecuted(event.target.checked)}
-            />
-            Plan executed today
-          </label>
-          <label>
-            Completion: {executed ? completion : 0}%
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={executed ? completion : 0}
-              disabled={!executed}
-              onChange={(event) => setCompletion(Number(event.target.value))}
-            />
-          </label>
-          <div className="form-grid">
-            <label>
-              Duration (minutes)
-              <input
-                type="number"
-                min="0"
-                max="240"
-                value={executed ? durationMinutes : 0}
-                disabled={!executed}
-                onChange={(event) => setDurationMinutes(Number(event.target.value))}
-              />
-            </label>
-          </div>
-          <label>
-            What was done
-            <textarea
-              value={executed ? activitySummary : "Plan was marked unfinished by the user."}
-              disabled={!executed}
-              onChange={(event) => setActivitySummary(event.target.value)}
-              rows={3}
-            />
-          </label>
-          <button className="secondary-button" type="button" onClick={recordExecution}>
-            <RefreshCw size={16} />
-            Save record
-          </button>
+          {todayPlan && todayPlan.schema_version >= 2 ? (
+            <>
+              <div className="workout-metrics">
+                <div>
+                  <strong>{measuredMetrics.completionPercentage}%</strong>
+                  <span>items done</span>
+                </div>
+                <div>
+                  <strong>{formatStopwatch(measuredMetrics.durationSeconds)}</strong>
+                  <span>active time</span>
+                </div>
+              </div>
+              <p className="muted">
+                {measuredMetrics.completedItems} of {measuredMetrics.totalItems} exercises marked done.
+                You can finish and save a partial workout.
+              </p>
+              <label>
+                Workout note
+                <textarea
+                  value={activitySummary}
+                  onChange={(event) => setActivitySummary(event.target.value)}
+                  rows={3}
+                />
+              </label>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={finishWorkout}
+                disabled={finishing || todayPlan.status === "executed"}
+              >
+                {finishing ? <Loader2 className="spin" size={16} /> : <CalendarCheck size={16} />}
+                {todayPlan.status === "executed" ? "Workout saved" : "Finish workout"}
+              </button>
+            </>
+          ) : (
+            <>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={executed}
+                  onChange={(event) => setExecuted(event.target.checked)}
+                />
+                Plan executed today
+              </label>
+              <label>
+                Completion: {executed ? completion : 0}%
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={executed ? completion : 0}
+                  disabled={!executed}
+                  onChange={(event) => setCompletion(Number(event.target.value))}
+                />
+              </label>
+              <label>
+                Duration (minutes)
+                <input
+                  type="number"
+                  min="0"
+                  max="240"
+                  value={executed ? durationMinutes : 0}
+                  disabled={!executed}
+                  onChange={(event) => setDurationMinutes(Number(event.target.value))}
+                />
+              </label>
+              <button className="secondary-button" type="button" onClick={recordExecution}>
+                <RefreshCw size={16} />
+                Save legacy record
+              </button>
+            </>
+          )}
           {todayPlan ? (
             <p className="status-line">
               Current plan status: <strong>{todayPlan.status}</strong>, {todayPlan.completion_percentage}% complete
@@ -524,8 +662,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <h2>Exercise records</h2>
           </div>
           <div className="record-list">
-            {data.records.length ? (
-              data.records.map((record) => (
+            {records.length ? (
+              records.map((record) => (
                 <article className="record-item" key={record.id}>
                   <div>
                     <strong>{record.record_date}</strong>

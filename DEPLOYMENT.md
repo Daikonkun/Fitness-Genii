@@ -5,6 +5,7 @@
 1. Create a free-tier Supabase project.
 2. In Authentication settings, disable public self-signup if users must only be assigned by the app admin.
 3. Apply the SQL files in `supabase/migrations/` in filename order with the Supabase SQL editor or the Supabase CLI.
+   For an existing deployment, apply `20260806090000_interactive_workouts.sql`, deploy the new app, and then apply `20260806090100_enable_plan_revisions.sql`. The first phase preserves the legacy one-plan-per-day upsert while the application changes over; the second phase enables retained same-day revisions.
 4. Create users from the Supabase dashboard under Authentication. Those assigned users can sign in at `/login`.
 5. Copy the project URL, anon key, and service role key into Vercel environment variables.
 
@@ -29,6 +30,8 @@ The app calls OpenRouter server-side at `/api/plans/generate`, using the Chat Co
 ```bash
 npm install
 npm run dev
+npm test
+npm run test:supabase
 ```
 
-Local generation and auth require real Supabase and OpenRouter credentials in `.env.local`.
+Local generation and auth require Supabase and OpenRouter credentials in `.env.local`. The Supabase integration suite uses the isolated `SUPABASE_TEST_URL`, `SUPABASE_TEST_ANON_KEY`, and `SUPABASE_TEST_SERVICE_ROLE_KEY` variables and deletes its temporary users when it finishes.
