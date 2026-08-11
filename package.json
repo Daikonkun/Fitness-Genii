@@ -2,12 +2,18 @@
   "name": "fitness-genii",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node scripts/test-workout.mjs",
+    "test": "npm run test:workout && npm run test:health",
+    "test:workout": "node scripts/test-workout.mjs",
+    "test:health": "node scripts/test-health.mjs",
     "test:supabase": "node scripts/test-supabase-workout.mjs",
+    "smoke": "node scripts/smoke-deployment.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
@@ -15,19 +21,19 @@
     "@supabase/ssr": "0.10.2",
     "@supabase/supabase-js": "2.105.3",
     "lucide-react": "1.14.0",
-    "next": "16.2.5",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "recharts": "3.8.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "25.6.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.5",
+    "eslint-config-next": "16.3.0",
     "typescript": "6.0.3",
-    "ws": "8.18.3"
+    "ws": "8.21.3"
   }
 }

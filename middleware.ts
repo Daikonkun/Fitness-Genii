@@ -1,10 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isHealthCheckPath } from "@/lib/health";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request
   });
+
+  // Liveness must not depend on Supabase session refresh. Readiness performs
+  // its own bounded dependency probe inside the route handler.
+  if (isHealthCheckPath(request.nextUrl.pathname)) {
+    return response;
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

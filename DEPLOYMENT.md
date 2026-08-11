@@ -23,7 +23,51 @@ The app calls OpenRouter server-side at `/api/plans/generate`, using the Chat Co
 1. Import the GitHub repository into Vercel on the free tier.
 2. Set all variables from `.env.example`.
 3. Set `CRON_SECRET` to a random string. Vercel Cron calls `/api/cron/finalize-unfinished` at `16:05 UTC`, which is `00:05` in Hong Kong, to mark prior-day unexecuted generated plans as unfinished.
-4. Deploy with the default Next.js build command: `npm run build`.
+4. Keep the project runtime on Node.js 24, matching `package.json` and CI.
+
+### Guarded release
+
+Run the application QA gate before creating a deployment:
+
+```bash
+npm test
+npm run test:supabase
+npm run lint
+npm run build
+npm run typecheck
+```
+
+Build and deploy one immutable Preview artifact:
+
+```bash
+vercel pull --yes --environment=preview
+vercel build
+vercel deploy --prebuilt --yes
+```
+
+Verify the Preview URL. Public previews can use the complete smoke runner; protected previews must be checked with an authenticated Vercel CLI session or a configured deployment-protection bypass token.
+
+```bash
+npm run smoke -- https://preview-url.vercel.app
+```
+
+Production promotion must point the production aliases at the verified Preview artifact without rebuilding it:
+
+```bash
+vercel promote https://preview-url.vercel.app
+npm run smoke -- https://fitness-genii.vercel.app
+vercel logs --project fitness-genii --environment production --level error --since 1h --no-branch
+```
+
+Do not close a reachability incident based only on a `READY` deployment state. Require successful DNS/TLS, `/api/health/live`, `/api/health/ready`, root redirect, login asset, protected-route, and post-promotion error-log checks.
+
+### Health and monitoring contract
+
+- `GET /api/health/live` is process-only and must stay independent of Supabase or session refresh.
+- `GET /api/health/ready` performs a bounded Supabase Auth health probe and returns `503` when configuration or the dependency is unavailable.
+- Both endpoints return the deployed Git commit in the response body and `X-Fitness-Genii-Commit` header.
+- Configure an external uptime service from at least two network regions to check DNS, TLS, liveness, readiness, `/login`, and one static asset every minute. Retain status, response headers, latency, DNS answers, and the Vercel request ID for every failure.
+- Treat an identical-commit redeploy as temporary containment until the captured evidence identifies and removes the underlying DNS, edge, runtime, or dependency failure.
 
 ## Local development
 
