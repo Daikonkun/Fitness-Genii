@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { formatStopwatch, workoutMetrics } from "@/lib/workout";
+import { bandSetups, bandSetup, equipmentDescription, withBandSetup, type BandSetup } from "@/lib/exercises/equipment";
 import { WorkoutPlan } from "@/components/WorkoutPlan";
 import type {
   BodyStatus,
@@ -469,10 +470,17 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <label>
               Equipment
               <input
-                value={target.equipment ?? ""}
-                onChange={(event) => setTarget({ ...target, equipment: event.target.value })}
-                placeholder="None, dumbbells, bands..."
+                value={equipmentDescription(target.equipment)}
+                onChange={(event) => setTarget({ ...target, equipment: withBandSetup(event.target.value, bandSetup(target.equipment)) })}
+                placeholder="None, dumbbells, handled tubes..."
               />
+            </label>
+            <label>
+              Band setup / 彈力帶裝配
+              <select value={bandSetup(target.equipment)} onChange={(event) => setTarget({ ...target, equipment: withBandSetup(target.equipment ?? "", event.target.value as BandSetup) })}>
+                {Object.entries(bandSetups).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+              <small>The INNSTAR primary preset includes the padded chest unit, bar, handles and foot straps, and plans chest, back and core work. Other setups keep their own compatible movements.<br />INNSTAR 主力預設包含胸推背墊、橫桿、手柄及腳套，安排胸、背及核心訓練；其他裝配使用各自適用的動作。</small>
             </label>
           </div>
           <button

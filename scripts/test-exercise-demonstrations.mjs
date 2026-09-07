@@ -9,10 +9,10 @@ const { exercises, canonicalCopy, resolveExercise } = load(
 const { sketches, interpolatePose } = load("src/lib/exercises/poses.ts");
 const { generatedPlanSchema, structuredPlanSchema, generationResponseSchema } =
   load("src/lib/planSchema.ts");
-assert.equal(exercises.length, 28);
-assert.equal(new Set(exercises.map((e) => e.id)).size, 28);
+assert.equal(exercises.length, 35);
+assert.equal(new Set(exercises.map((e) => e.id)).size, 35);
 const migration = fs.readFileSync(
-  "supabase/migrations/20260907090000_exercise_demonstrations.sql",
+  "supabase/migrations/20260907095936_innstar_chest_core.sql",
   "utf8"
 );
 for (const exercise of exercises) {
@@ -41,6 +41,7 @@ for (const exercise of exercises) {
   }
   assert.ok(!exercise.equipment.includes("dumbbells") || sketch.weights);
   assert.ok(!exercise.equipment.includes("band") || sketch.band);
+  assert.ok(!exercise.equipment.includes("handled-tubes-foot-straps") || sketch.tubeStraps);
   assert.ok(
     !exercise.equipment.includes("chair") ||
       ["chair", "support"].includes(sketch.prop)
@@ -114,6 +115,7 @@ assert.equal(
 // Exercise the real route with read fixtures: errors must never call the mutating revision RPC.
 let rpcCalls = 0;
 let savedPayload;
+let testEquipment = "none";
 const db = {
   auth: { getUser: async () => ({ data: { user: { id: "test-user" } } }) },
   from(table) {
@@ -124,7 +126,7 @@ const db = {
           ? {
               id: "target",
               user_id: "test-user",
-              equipment: "none",
+              equipment: testEquipment,
               exercise_minutes: 20
             }
           : table === "daily_plans"
@@ -181,6 +183,32 @@ try {
     assert.equal(response.status, status);
     assert.equal(rpcCalls, 0);
   }
+  const incompatible = structuredClone(plan);
+  incompatible.sections[0].items[0].exercise_id = "handled-tube-seated-row";
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{message: {content: JSON.stringify({status: "ready", reason_en: "", reason_zh: "", plan: incompatible})}}] }));
+  const blocked = await POST(new Request("http://localhost/api/plans/generate", {method: "POST", body: "{}"}));
+  assert.equal(blocked.status, 422);
+  assert.equal(rpcCalls, 0);
+  testEquipment = "handled tubes [band-setup:foot_straps]";
+  const supported = await POST(new Request("http://localhost/api/plans/generate", {method: "POST", body: "{}"}));
+  assert.equal(supported.status, 200);
+  assert.equal(savedPayload.p_plan_json.sections[0].items[0].exercise_id, "handled-tube-seated-row");
+  rpcCalls = 0;
+  testEquipment = "INNSTAR padded chest expander, bar, handles, foot straps [band-setup:innstar_primary]";
+  const incomplete = await POST(new Request("http://localhost/api/plans/generate", {method: "POST", body: "{}"}));
+  assert.equal(incomplete.status, 422);
+  assert.equal((await incomplete.json()).code, "kit_focus_missing");
+  assert.equal(rpcCalls, 0);
+  const balanced = structuredClone(plan);
+  balanced.sections[0].section_type = "main_workout";
+  balanced.sections[0].items = ["innstar-bar-floor-press", "handled-tube-seated-row", "handled-tube-side-bend"].map(exercise_id => ({...item, exercise_id}));
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{message: {content: JSON.stringify({status: "ready", reason_en: "", reason_zh: "", plan: balanced})}}] }));
+  const covered = await POST(new Request("http://localhost/api/plans/generate", {method: "POST", body: "{}"}));
+  assert.equal(covered.status, 200);
+  assert.equal(rpcCalls, 1);
+  assert.deepEqual(savedPayload.p_plan_json.sections[0].items.map(i => i.exercise_id), balanced.sections[0].items.map(i => i.exercise_id));
+  rpcCalls = 0;
+  testEquipment = "none";
   globalThis.fetch = async () =>
     new Response(
       JSON.stringify({
@@ -214,14 +242,14 @@ try {
     savedPayload.p_plan_json.sections[0].items[0].exercise_id,
     first.id
   );
-  assert.equal(savedPayload.p_prompt_inputs.exercise_catalogue_version, 1);
+  assert.equal(savedPayload.p_prompt_inputs.exercise_catalogue_version, 3);
 } finally {
   globalThis.fetch = oldFetch;
   if (oldKey === undefined) delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = oldKey;
 }
 console.log(
-  "28 sketch assets, catalogue validation, historical matching and generation failure tests passed."
+  "35 sketch assets, catalogue validation, historical matching and generation failure tests passed."
 );
 
 // A missing bundled pose must retain usable instructions rather than crash the card.
@@ -237,3 +265,59 @@ try {
 } finally {
   assetModule.sketches[first.id] = originalSketch;
 }
+
+const { bandEquipmentCompatible, bandSetup, withBandSetup } = load("src/lib/exercises/equipment.ts");
+const flat = exercises.find(e => e.id === "band-pull-apart");
+const handled = exercises.find(e => e.id === "handled-tube-curl");
+for (const ambiguous of [null, "6kg resistance band", "handles and straps", "no bands"]) {
+  assert.equal(bandEquipmentCompatible(flat, ambiguous), false);
+  assert.equal(bandEquipmentCompatible(handled, ambiguous), false);
+}
+assert.equal(bandEquipmentCompatible(flat, withBandSetup("tube", "foot_straps")), false);
+assert.equal(bandEquipmentCompatible(handled, withBandSetup("tube", "foot_straps")), true);
+assert.equal(bandEquipmentCompatible(handled, withBandSetup("band", "flat")), false);
+assert.equal(bandEquipmentCompatible(flat, withBandSetup("band", "flat")), true);
+assert.equal(bandSetup(withBandSetup("tube [band-setup:flat]", "foot_straps")), "foot_straps");
+assert.equal(bandSetup("[band-setup:flat] [band-setup:foot_straps]"), "unspecified");
+const { SketchFigure } = load("src/components/ExerciseSketch.tsx");
+for (const exercise of exercises.filter(e => e.equipment.includes("handled-tubes-foot-straps"))) {
+  const sketch = sketches[exercise.id];
+  for (const pose of sketch.poses) {
+    const svg = renderToStaticMarkup(React.createElement(SketchFigure, {pose, sketch, label: exercise.title_en}));
+    assert.equal((svg.match(/data-tube-strap/g) ?? []).length, sketch.singleTube ? 1 : 2);
+    assert.ok(!svg.includes("NaN"));
+  }
+  assert.deepEqual(sketch.poses[0][8], sketch.poses[1][8]);
+  assert.deepEqual(sketch.poses[0][10], sketch.poses[1][10]);
+}
+
+const { missingKitFocus } = load("src/lib/exercises/equipment.ts");
+const primary = "[band-setup:innstar_primary]";
+const kitExercises = exercises.filter(e => bandEquipmentCompatible(e, primary));
+assert.deepEqual(missingKitFocus(kitExercises, primary), []);
+assert.equal(bandEquipmentCompatible(flat, primary), false);
+for (const id of ["innstar-bar-floor-press", "innstar-standing-chest-press"]) {
+  const exercise = exercises.find(e => e.id === id);
+  assert.equal(bandEquipmentCompatible(exercise, "[band-setup:foot_straps]"), false);
+  assert.equal(bandEquipmentCompatible(exercise, primary), true);
+  const sketch = sketches[id];
+  for (const pose of sketch.poses) {
+    const svg = renderToStaticMarkup(React.createElement(SketchFigure, {pose, sketch, label:id}));
+    assert.ok(svg.includes('data-chest-pad="true"'));
+    assert.equal((svg.match(/data-chest-tube/g) ?? []).length, 2);
+    if (sketch.bar) assert.ok(svg.includes('data-kit-bar="true"'));
+  }
+}
+const barSketch = sketches["innstar-bar-floor-press"];
+for(let t=0;t<1;t+=.05) {
+  const pose=interpolatePose(barSketch,t,false);
+  assert.equal(pose[6][0]-pose[4][0],36);
+  assert.equal(pose[6][1],pose[4][1]);
+}
+const { buildPlanPrompt } = load("src/lib/planPrompt.ts");
+const prompt=buildPlanPrompt({target:{equipment:primary},bodyStatus:null,weightLogs:[],historyDigest:{},previousPlan:null,todayHk:"2026-09-07"});
+const catalogue=JSON.parse(prompt[1].content.split("Supported exercise catalogue (version 3):\n")[1].split("\n\nUser body status:")[0]);
+assert.ok(catalogue.some(e=>e.focus==="chest"));
+assert.ok(catalogue.some(e=>e.focus==="back"));
+assert.ok(catalogue.some(e=>e.focus==="core"));
+assert.ok(!catalogue.some(e=>e.exercise_id==="band-pull-apart"));

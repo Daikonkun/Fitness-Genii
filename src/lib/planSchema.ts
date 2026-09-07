@@ -130,4 +130,4 @@ export const generationResponseJsonSchema = {
     plan: { anyOf: [structuredPlanJsonSchema, { type: "null" }] }
   }
 };
-export const generationCatalogue = exercises.map(({id, title_en, title_zh, equipment, steps, cue}) => ({exercise_id:id, title_en, title_zh, equipment, steps, cue}));
+export const generationCatalogue = exercises.map(({id, title_en, title_zh, equipment, steps, cue, focus}) => ({exercise_id:id, title_en, title_zh, equipment, steps, cue, focus}));

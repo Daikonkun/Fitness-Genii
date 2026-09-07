@@ -22,6 +22,13 @@ export function SketchFigure({
   const line = (...points: number[][]) =>
     points.map((p) => p.join(",")).join(" ");
   const front = sketch.view === "Front";
+  const pad = sketch.chestPad === "floor"
+    ? [[79, 216], [124, 222]]
+    : [[shoulder[0] - 16, shoulder[1] + 2], [shoulder[0] - 16, shoulder[1] + 32]];
+  const barEnds = [[fw[0] - 25, fw[1]], [nw[0] + 25, nw[1]]];
+  const connections = sketch.chestPad
+    ? [[sketch.bar ? barEnds[0] : fw, pad[0]], [sketch.bar ? barEnds[1] : nw, pad[1]]]
+    : sketch.tubeStraps ? (sketch.singleTube ? [[nw, na]] : [[fw, fa], [nw, na]]) : [];
   const limbs = [
     line([shoulder[0] - (front ? 10 : 0), shoulder[1]], fe, fw),
     line([hip[0] - (front ? 7 : 0), hip[1]], fk, fa),
@@ -76,6 +83,7 @@ export function SketchFigure({
           strokeWidth="4"
         />
       )}
+      {sketch.chestPad && <path data-chest-pad="true" d={`M${pad[0]}L${pad[1]}`} stroke="#324b49" strokeWidth="17" strokeLinecap="round" />}
       {/* Double strokes form outlined limbs rather than bare joint sticks. */}
       {limbs.slice(0, 2).map((points, i) => (
         <g key={i} strokeLinecap="round" strokeLinejoin="round">
@@ -160,6 +168,27 @@ export function SketchFigure({
           strokeWidth="4"
         />
       )}
+      {connections.map(([hand, foot], index) => {
+        // Separate tubes terminate at a handle ring and a secured foot strap.
+        const dx = foot[0] - hand[0], dy = foot[1] - hand[1];
+        const length = Math.max(1, Math.hypot(dx, dy));
+        const ux = dx / length, uy = dy / length;
+        const ring = sketch.bar ? hand : [hand[0] + ux * 16, hand[1] + uy * 16];
+        const a = [hand[0] - uy * 10, hand[1] + ux * 10];
+        const b = [hand[0] + uy * 10, hand[1] - ux * 10];
+        return <g key={index} data-tube-strap={sketch.tubeStraps ? "true" : undefined} data-chest-tube={sketch.chestPad ? "true" : undefined} fill="none" strokeLinejoin="round">
+          <path d={`M${ring}L${foot}`} stroke="#b76b35" strokeWidth="5" />
+          <path d={`M${ring}L${foot}`} stroke="#f4c399" strokeWidth="2" strokeDasharray="3 5" />
+          {sketch.tubeStraps && <ellipse cx={foot[0] + 3} cy={foot[1] + 2} rx="12" ry="6" stroke="#425b59" strokeWidth="4" />}
+          {!sketch.bar && <path d={`M${a}L${ring}L${b}`} stroke="#425b59" strokeWidth="3" />}
+          {!sketch.bar && <path d={`M${a}L${b}`} stroke="#253d3b" strokeWidth="6" strokeLinecap="round" />}
+          <circle cx={ring[0]} cy={ring[1]} r="3" stroke="#425b59" strokeWidth="2" />
+        </g>;
+      })}
+      {sketch.bar && <g data-kit-bar="true" stroke="#253d3b" fill="none">
+        <path d={`M${barEnds[0]}L${barEnds[1]}`} strokeWidth="7" strokeLinecap="round" />
+        {barEnds.map(([x, y], index) => <circle key={index} cx={x} cy={y} r="5" strokeWidth="2" />)}
+      </g>}
       {sketch.weights === "both" && [dumbbell(fw, "far"), dumbbell(nw, "near")]}
       {sketch.weights === "near" && dumbbell(nw, "near")}
       {sketch.weights === "goblet" && (
@@ -311,6 +340,8 @@ export function ExerciseSketch({ exercise }: { exercise: ExerciseDefinition }) {
       </div>
       <div className="exercise-demo-instructions">
         <h4>How to do it / 動作示範</h4>
+        {sketch.tubeStraps && <p>{sketch.singleTube ? "Setup: one handle connected to the same-side foot strap." : "Setup: two handled tubes connected to their matching foot straps."}<br /><span lang="zh-Hant">{sketch.singleTube ? "裝配：一個手柄接同側腳套。" : "裝配：兩側手柄拉力管接各自腳套。"}</span></p>}
+        {sketch.chestPad && <p>Setup: use the padded chest-expander assembly across the upper back{sketch.bar ? ", attached to both bar ends" : " with its handles"}.<br /><span lang="zh-Hant">裝配：胸推器背墊置於上背，{sketch.bar ? "兩側接橫桿端扣環" : "配兩側手柄"}。</span></p>}
         <ol>
           {exercise.steps.map(([en, zh]) => (
             <li key={en}>

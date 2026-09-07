@@ -1,4 +1,6 @@
 import { generationCatalogue } from "./planSchema";
+import { EXERCISE_CATALOGUE_VERSION, getExercise } from "./exercises/catalogue";
+import { bandEquipmentCompatible } from "./exercises/equipment";
 import type { BodyStatus, ExerciseTarget, StructuredPlan, WeightLog } from "@/lib/types";
 
 type PromptInput = {
@@ -36,14 +38,16 @@ Required plan behavior:
 - If no suitable plan can be made, return status="unavailable", a concise reason in both languages, and plan=null. Never ignore injury, equipment, or explicit movement requirements just to produce a plan.
 - Every move MUST use exactly one exercise_id from the catalogue below. No extra variants, combinations, equipment changes, or substitutions inside an item. Select another supported ID for a substitution.
 - Use only equipment the user has. Chair and wall support require availability too. Basic fitness goals can use bodyweight even when other equipment is available; explicit requests for unsupported movements cannot.
+- Band setup is explicitly confirmed in the equipment marker. An unspecified band, a resistance rating, or old workout history does not confirm attachments. Never use a flat band move for handled tubes, wrap independent tubes around the back, or invent anchors. If a requested band workout is unavailable, explain the missing setup confirmation. Do not interpret a nominal kg label as constant resistance.
+- When band-setup is innstar_primary, the user's main equipment is the INNSTAR padded chest expander, assembled bar, handled tubes and foot straps. Include at least one main-workout kit exercise for EACH focus: chest, back and core. Prefer kit work for the main session; warm-up/cool-down may be bodyweight. No external anchor is available by default. If injury, time, or feedback prevents this coverage, return unavailable and explain rather than forcing an unsuitable move or silently omitting a focus. The padded chest unit is distinct from loose independent tubes and is allowed across the upper back for its listed presses. Never infer 230 cm as the allowable stretch of an individual tube or invent resistance loads.
 - Copy the catalogue movement names and instructions. Customize only selection, time/reps/cycles/rest and planned_seconds. A prescription must not change the movement variant.
 - Each move must have English and Chinese titles and descriptions, a concise time/reps/cycle prescription, and planned_seconds (use 0 only when no meaningful time can be estimated).
 - Include safer substitutions when injury notes imply risk.
 - Keep total planned exercise time within the user's requested minutes.
 - Include a short completion logging suggestion in both languages.
 
-Supported exercise catalogue (version 1):
-${JSON.stringify(generationCatalogue)}
+Supported exercise catalogue (version ${EXERCISE_CATALOGUE_VERSION}):
+${JSON.stringify(generationCatalogue.filter((entry) => bandEquipmentCompatible(getExercise(entry.exercise_id)!, input.target?.equipment)))}
 
 User body status:
 ${JSON.stringify(input.bodyStatus, null, 2)}

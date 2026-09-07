@@ -1,6 +1,6 @@
 # Exercise demonstrations
 
-New generated plans use catalogue version 1 and plan schema version 3. All 28 IDs in
+New generated plans use catalogue version 3 and plan schema version 3. All 35 IDs in
 `src/lib/exercises/catalogue.ts` have authored SVG key poses in `poses.ts`. These
 are original diagrams rendered locally, with no remote media, generated video,
 or paid animation API. IDs identify exact variants: do not reuse an ID for a
@@ -25,7 +25,7 @@ Use Node 24 and the locked dependencies. Run `npm test`, `npm run typecheck`,
 `SUPABASE_TEST_SERVICE_ROLE_KEY` variables; point them at an isolated local
 Supabase stack with all migrations applied. It creates and removes test users.
 
-With `npm run dev`, open `/dev/exercises` to review all 28 illustrations,
+With `npm run dev`, open `/dev/exercises` to review all 35 illustrations,
 completed/read-only cards, keyboard expansion, playback and reduced motion.
 This route returns not found in production. Normal workouts use the same
 WorkoutPlan / PlanItemCard components. The demonstration speed control never
@@ -59,3 +59,5 @@ entry, a hold, and release; the loop is not a prescribed hold duration.
    old clients ignore the extra field. Do not remove IDs or rewrite plan history.
 
 No production migration or deployment is included in this change.
+
+Handled-tube setup selection, historical compatibility findings, and the forward migration are described in [handled-tube-review.md](handled-tube-review.md).

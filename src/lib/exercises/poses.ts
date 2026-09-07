@@ -20,6 +20,10 @@ export type Sketch = {
   prop?: "chair" | "support" | "wall";
   weights?: "both" | "near" | "goblet";
   band?: "feet" | "hands";
+  tubeStraps?: boolean;
+  singleTube?: boolean;
+  chestPad?: "floor" | "standing";
+  bar?: boolean;
   toeAnchor?: boolean;
   view: "Front" | "Side" | "Three-quarter";
 };
@@ -530,6 +534,40 @@ export const sketches: Record<string, Sketch> = {
     ]
   },
   "standing-band-curl": { view: "Front", band: "feet", poses: [front, curl] },
+  "handled-tube-curl": { view: "Front", tubeStraps: true, poses: [front, curl] },
+  "handled-tube-romanian-deadlift": { view: "Side", tubeStraps: true, poses: [side, hinge] },
+  "handled-tube-bent-over-row": {
+    view: "Side", tubeStraps: true,
+    poses: [hinge, withPoints(hinge, {3: [145, 110], 4: [162, 142], 5: [137, 120], 6: [153, 151]})]
+  },
+  "handled-tube-seated-row": {
+    view: "Side", tubeStraps: true,
+    poses: [
+      [[106, 82], [110, 112], [120, 208], [152, 134], [193, 153], [150, 146], [190, 167], [183, 194], [245, 211], [177, 204], [237, 220]],
+      [[106, 82], [110, 112], [120, 208], [81, 149], [123, 163], [83, 160], [126, 177], [183, 194], [245, 211], [177, 204], [237, 220]]
+    ]
+  },
+  "innstar-bar-floor-press": {
+    view: "Three-quarter", chestPad: "floor", bar: true,
+    poses: [
+      withPoints(floor, {3: [108, 217], 4: [110, 176], 5: [139, 220], 6: [146, 176]}),
+      withPoints(floor, {3: [100, 165], 4: [110, 121], 5: [119, 163], 6: [146, 121]})
+    ]
+  },
+  "innstar-standing-chest-press": {
+    view: "Side", chestPad: "standing",
+    poses: [
+      withPoints(side, {3: [137, 107], 4: [171, 82], 5: [127, 114], 6: [161, 93], 8: [181, 220], 10: [119, 220]}),
+      withPoints(side, {3: [184, 77], 4: [226, 82], 5: [177, 91], 6: [219, 96], 8: [181, 220], 10: [119, 220]})
+    ]
+  },
+  "handled-tube-side-bend": {
+    view: "Front", tubeStraps: true, singleTube: true,
+    poses: [
+      withPoints(front, {3: [101, 113], 4: [135, 132]}),
+      withPoints(front, {0: [126, 49], 1: [133, 78], 3: [91, 119], 4: [127, 137], 5: [169, 97], 6: [182, 126]})
+    ]
+  },
   "wall-calf-stretch": {
     view: "Side",
     prop: "wall",

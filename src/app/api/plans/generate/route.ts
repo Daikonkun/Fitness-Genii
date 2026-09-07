@@ -6,7 +6,8 @@ import {
   generationResponseSchema,
   structuredPlanToMarkdown
 } from "@/lib/planSchema";
-import { EXERCISE_CATALOGUE_VERSION } from "@/lib/exercises/catalogue";
+import { bandEquipmentCompatible, missingKitFocus } from "@/lib/exercises/equipment";
+import { EXERCISE_CATALOGUE_VERSION, getExercise } from "@/lib/exercises/catalogue";
 import { buildPlanPrompt } from "@/lib/planPrompt";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -238,6 +239,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `${structuredPlanResult.data.reason_en} / ${structuredPlanResult.data.reason_zh}`, code: "exercise_library_unavailable" }, { status: 422 });
   }
   const structuredPlan = structuredPlanResult.data.plan;
+  if (structuredPlan.sections.some((section) => section.items.some((item) =>
+    !bandEquipmentCompatible(getExercise(item.exercise_id)!, target.equipment)
+  ))) {
+    return NextResponse.json({ error: "This plan requires a band setup that has not been confirmed. Check Band setup in your inputs. / 此計劃需要尚未確認的彈力帶裝配，請檢查輸入設定。", code: "band_setup_unconfirmed" }, { status: 422 });
+  }
+  const missingFocus = missingKitFocus(structuredPlan.sections.filter(section => section.section_type === "main_workout").flatMap(section => section.items.map(item => getExercise(item.exercise_id)!)), target.equipment);
+  if (missingFocus.length) {
+    return NextResponse.json({ error: "The primary-kit plan did not cover chest, back and core. The current plan is unchanged. / 主力器材計劃未涵蓋胸、背及核心；原計劃保持不變。", code: "kit_focus_missing", missing: missingFocus }, { status: 422 });
+  }
   const planMarkdown = structuredPlanToMarkdown(structuredPlan);
 
   const { data: planId, error: upsertError } = await supabase.rpc(

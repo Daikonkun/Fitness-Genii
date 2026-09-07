@@ -284,6 +284,20 @@ try {
     const active = await expectNoError(await owner.client.from("exercise_intervals").select("plan_item_id").is("ended_at",null).single(), "timer survives rejected revision");
     assert.equal(active.plan_item_id, savedItems[0].id);
   }
+  const tubeIds = ["handled-tube-curl", "handled-tube-romanian-deadlift", "handled-tube-bent-over-row", "handled-tube-seated-row", "innstar-bar-floor-press", "innstar-standing-chest-press", "handled-tube-side-bend"];
+  const tubePlan = structuredClone(planJson);
+  tubePlan.sections[0].items = tubeIds.map(exercise_id => ({...planJson.sections[0].items[0], exercise_id}));
+  for (let revision = 3; revision <= 4; revision++) {
+    const tubePlanId = await expectNoError(await owner.client.rpc("create_structured_plan_revision", {
+      p_target_id: target.id, p_plan_date: today, p_plan_json: tubePlan,
+      p_plan_markdown: "Tube fixtures", p_feedback: "", p_model: "test", p_prompt_inputs: {}
+    }), "persist tube revision");
+    const tubeItems = await expectNoError(await owner.client.from("plan_items").select("exercise_id").eq("plan_id", tubePlanId).order("item_position"), "load tube IDs");
+    assert.deepEqual(tubeItems.map(item => item.exercise_id), tubeIds);
+    const saved = await expectNoError(await owner.client.from("daily_plans").select("revision,schema_version").eq("id", tubePlanId).single(), "tube schema");
+    assert.equal(saved.schema_version, 3);
+    assert.equal(saved.revision, revision);
+  }
   console.log("Supabase workout integration tests passed (v2/v3, IDs, revisions, RLS and rollback).");
 } finally {
   for (const userId of createdUserIds.reverse()) {

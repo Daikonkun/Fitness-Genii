@@ -25,7 +25,7 @@ export default function ExerciseReviewPage() {
   return (
     <main style={{ maxWidth: 1000, margin: "32px auto", padding: 16 }}>
       <h1>Exercise demonstrations</h1>
-      <p>Local visual review · 28 movements · workout tracking disabled</p>
+      <p>Local visual review · {exercises.length} movements · workout tracking disabled</p>
       <WorkoutPlan planId="review" items={items} intervals={[]} />
     </main>
   );
