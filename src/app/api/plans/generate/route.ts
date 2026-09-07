@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getHongKongDate } from "@/lib/date";
 import {
-  structuredPlanJsonSchema,
-  structuredPlanSchema,
+  generationResponseJsonSchema,
+  generationResponseSchema,
   structuredPlanToMarkdown
 } from "@/lib/planSchema";
+import { EXERCISE_CATALOGUE_VERSION } from "@/lib/exercises/catalogue";
 import { buildPlanPrompt } from "@/lib/planPrompt";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -188,7 +189,7 @@ export async function POST(request: Request) {
         json_schema: {
           name: "fitness_genii_daily_plan",
           strict: true,
-          schema: structuredPlanJsonSchema
+          schema: generationResponseJsonSchema
         }
       }
     })
@@ -222,7 +223,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const structuredPlanResult = structuredPlanSchema.safeParse(parsedPlanJson);
+  const structuredPlanResult = generationResponseSchema.safeParse(parsedPlanJson);
   if (!structuredPlanResult.success) {
     return NextResponse.json(
       {
@@ -233,7 +234,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const structuredPlan = structuredPlanResult.data;
+  if (structuredPlanResult.data.status === "unavailable") {
+    return NextResponse.json({ error: `${structuredPlanResult.data.reason_en} / ${structuredPlanResult.data.reason_zh}`, code: "exercise_library_unavailable" }, { status: 422 });
+  }
+  const structuredPlan = structuredPlanResult.data.plan;
   const planMarkdown = structuredPlanToMarkdown(structuredPlan);
 
   const { data: planId, error: upsertError } = await supabase.rpc(
@@ -246,6 +250,7 @@ export async function POST(request: Request) {
       p_feedback: parsed.data.feedback ?? "",
       p_model: model,
       p_prompt_inputs: {
+        exercise_catalogue_version: EXERCISE_CATALOGUE_VERSION,
         bodyStatus,
         target,
         weightLogs,

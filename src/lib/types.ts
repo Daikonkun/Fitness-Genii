@@ -69,6 +69,7 @@ export type DailyPlan = {
 export type PlanSectionType = "warm_up" | "main_workout" | "cool_down";
 
 export type StructuredPlanItem = {
+  exercise_id?: string | null;
   title_en: string;
   title_zh: string;
   description_en: string;

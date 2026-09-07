@@ -9,13 +9,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "npm run test:workout && npm run test:health",
+    "test": "npm run test:workout && npm run test:health && npm run test:exercises",
     "test:workout": "node scripts/test-workout.mjs",
     "test:health": "node scripts/test-health.mjs",
     "test:supabase": "node scripts/test-supabase-workout.mjs",
     "smoke": "node scripts/smoke-deployment.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:exercises": "node scripts/test-exercise-demonstrations.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.10.2",

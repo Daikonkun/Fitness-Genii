@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { exercises, exerciseIds, getExercise, canonicalCopy } from "./exercises/catalogue";
 import type {
   StructuredPlan,
   StructuredPlanItem,
@@ -6,6 +7,7 @@ import type {
 } from "@/lib/types";
 
 export const structuredPlanItemSchema: z.ZodType<StructuredPlanItem> = z.object({
+  exercise_id: z.string().nullable().optional(),
   title_en: z.string().min(1).max(160),
   title_zh: z.string().min(1).max(160),
   description_en: z.string().min(1).max(600),
@@ -62,6 +64,7 @@ export const structuredPlanJsonSchema = {
               type: "object",
               additionalProperties: false,
               required: [
+                "exercise_id",
                 "title_en",
                 "title_zh",
                 "description_en",
@@ -70,6 +73,7 @@ export const structuredPlanJsonSchema = {
                 "planned_seconds"
               ],
               properties: {
+                exercise_id: { type: "string", enum: exerciseIds },
                 title_en: { type: "string" },
                 title_zh: { type: "string" },
                 description_en: { type: "string" },
@@ -105,3 +109,25 @@ export function structuredPlanToMarkdown(plan: StructuredPlan) {
   lines.push(plan.completion_suggestion_en, plan.completion_suggestion_zh);
   return lines.join("\n");
 }
+
+// Historical parsing stays permissive; only the generation boundary requires catalogue IDs.
+export const generatedPlanSchema = structuredPlanSchema.superRefine((plan, ctx) => {
+  plan.sections.forEach((section, si) => section.items.forEach((item, ii) => {
+    if (!getExercise(item.exercise_id)) ctx.addIssue({ code: "custom", path: ["sections", si, "items", ii, "exercise_id"], message: "A supported exercise_id is required." });
+  }));
+}).transform((plan) => ({ ...plan, sections: plan.sections.map((section) => ({ ...section, items: section.items.map((item) => ({ ...item, ...canonicalCopy(getExercise(item.exercise_id)!) })) })) }));
+
+export const generationResponseSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("ready"), reason_en: z.literal(""), reason_zh: z.literal(""), plan: generatedPlanSchema }),
+  z.object({ status: z.literal("unavailable"), reason_en: z.string().min(1).max(600), reason_zh: z.string().min(1).max(600), plan: z.null() })
+]);
+export const generationResponseJsonSchema = {
+  type: "object", additionalProperties: false,
+  required: ["status", "reason_en", "reason_zh", "plan"],
+  properties: {
+    status: { type: "string", enum: ["ready", "unavailable"] },
+    reason_en: { type: "string" }, reason_zh: { type: "string" },
+    plan: { anyOf: [structuredPlanJsonSchema, { type: "null" }] }
+  }
+};
+export const generationCatalogue = exercises.map(({id, title_en, title_zh, equipment, steps, cue}) => ({exercise_id:id, title_en, title_zh, equipment, steps, cue}));

@@ -1,26 +1,6 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { createRequire } from "node:module";
-import ts from "typescript";
-
-const require = createRequire(import.meta.url);
-
-function loadTypeScriptModule(relativePath) {
-  const source = fs.readFileSync(new URL(relativePath, import.meta.url), "utf8");
-  const compiled = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2022
-    }
-  }).outputText;
-  const testModule = { exports: {} };
-  new Function("exports", "module", "require", compiled)(
-    testModule.exports,
-    testModule,
-    require
-  );
-  return testModule.exports;
-}
+import { loadTypeScriptModule as load } from "./lib/load-typescript.mjs";
+const loadTypeScriptModule = (file) => load(new URL(file, import.meta.url).pathname);
 
 const { formatStopwatch, intervalSeconds, itemElapsedSeconds, workoutMetrics } =
   loadTypeScriptModule("../src/lib/workout.ts");

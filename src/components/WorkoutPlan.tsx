@@ -21,6 +21,7 @@ export function WorkoutPlan({
   interactive = false,
   onDataChange
 }: WorkoutPlanProps) {
+  const [openDemonstrationId, setOpenDemonstrationId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +131,8 @@ export function WorkoutPlan({
               <PlanItemCard
                 key={item.id}
                 item={item}
+                demonstrationOpen={openDemonstrationId === item.id}
+                onDemonstrationToggle={() => setOpenDemonstrationId((current) => current === item.id ? null : item.id)}
                 elapsedSeconds={itemElapsedSeconds(item.id, intervals, nowMs)}
                 active={activeInterval?.plan_item_id === item.id}
                 interactive={interactive}

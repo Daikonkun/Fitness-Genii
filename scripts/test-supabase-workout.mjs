@@ -218,6 +218,12 @@ try {
   });
   assert.ok(postFinishToggle.error, "finished workouts must reject new timer intervals");
 
+  // Old callers save v2 without IDs; new generation saves v3 with full coverage.
+  const legacyPlan = await expectNoError(await owner.client.from("daily_plans").select("schema_version").eq("id",planId).single(), "legacy schema");
+  assert.equal(legacyPlan.schema_version, 2);
+  planJson.sections[0].items[0].exercise_id = "march-in-place";
+  planJson.sections[0].items[1].exercise_id = "bodyweight-squat";
+
   const revision2Id = await expectNoError(
     await owner.client.rpc("create_structured_plan_revision", {
       p_target_id: target.id,
@@ -259,7 +265,26 @@ try {
       : [{ revision: 2, current: true, status: "regenerated" }]
   );
 
-  console.log("Supabase workout integration tests passed.");
+  const savedV3 = await expectNoError(await owner.client.from("daily_plans").select("schema_version,plan_json").eq("id",revision2Id).single(), "v3 schema");
+  assert.equal(savedV3.schema_version,3);
+  assert.equal(savedV3.plan_json.sections[0].items[0].exercise_id,"march-in-place");
+  const savedItems = await expectNoError(await owner.client.from("plan_items").select("id,exercise_id").eq("plan_id",revision2Id).order("item_position"), "v3 IDs");
+  assert.deepEqual(savedItems.map(item=>item.exercise_id), ["march-in-place","bodyweight-squat"]);
+  await expectNoError(await owner.client.rpc("toggle_plan_item_timer", {p_plan_item_id:savedItems[0].id}), "start before failed revision");
+  for (const invalidId of ["unsupported-variant", null]) {
+    const invalidPlan = structuredClone(planJson);
+    invalidPlan.sections[0].items[1].exercise_id = invalidId;
+    const failed = await owner.client.rpc("create_structured_plan_revision", {
+      p_target_id:target.id,p_plan_date:today,p_plan_json:invalidPlan,
+      p_plan_markdown:"invalid",p_feedback:"",p_model:"test",p_prompt_inputs:{}
+    });
+    assert.ok(failed.error, "invalid / partial coverage must fail");
+    const current = await expectNoError(await owner.client.from("daily_plans").select("id").eq("is_current",true).single(), "unchanged current revision");
+    assert.equal(current.id, revision2Id);
+    const active = await expectNoError(await owner.client.from("exercise_intervals").select("plan_item_id").is("ended_at",null).single(), "timer survives rejected revision");
+    assert.equal(active.plan_item_id, savedItems[0].id);
+  }
+  console.log("Supabase workout integration tests passed (v2/v3, IDs, revisions, RLS and rollback).");
 } finally {
   for (const userId of createdUserIds.reverse()) {
     await admin.auth.admin.deleteUser(userId);

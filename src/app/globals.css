@@ -815,3 +815,29 @@ textarea:focus {
     max-height: none;
   }
 }
+
+.exercise-demo { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+.exercise-demo-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; border: 0; background: #f5f8f2; color: #255f53; padding: 13px 16px; cursor: pointer; text-align: left; font: inherit; font-weight: 600; min-height: 44px; }
+.exercise-demo-toggle:focus-visible, .exercise-demo-controls button:focus-visible, .exercise-demo-controls select:focus-visible { outline: 3px solid #37816d; outline-offset: -3px; }
+.exercise-demo-layout { display: grid; grid-template-columns: minmax(230px, .9fr) minmax(0, 1fr); gap: 24px; padding: 20px; }
+.exercise-demo-visual { min-width: 0; background: #f7f8f1; border: 1px solid #e2e8dc; border-radius: 12px; padding: 14px; text-align: center; }
+.exercise-demo-eyebrow { display: block; text-align: left; color: #53685c; font-size: 12px; }
+.exercise-sketch { display: block; width: 100%; max-height: 270px; }
+.exercise-phase { margin: 0 0 10px; color: #255f53; font-size: 13px; }
+.exercise-demo-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.exercise-demo-controls button, .exercise-demo-controls select { background: white; color: #255f53; border: 1px solid #afc4b7; border-radius: 6px; padding: 8px 12px; min-height: 44px; font: inherit; cursor: pointer; }
+.exercise-demo-controls label { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.exercise-demo-controls select { width: auto; }
+.exercise-demo-visual small { display: block; color: #53685c; font-size: 11px; line-height: 1.6; }
+.exercise-demo-instructions h4 { margin: 0 0 16px; }
+.exercise-demo-instructions ol { margin: 0; padding-left: 22px; }
+.exercise-demo-instructions li { margin-bottom: 12px; padding-left: 4px; }
+.exercise-demo-instructions span { display: block; font-size: 13px; line-height: 1.65; }
+.exercise-demo-instructions [lang="zh-Hant"] { color: #53685c; }
+.exercise-form-cue { padding: 12px; background: #f2f6f0; border-left: 3px solid #7e9d83; border-radius: 4px; }
+.exercise-form-cue strong { display: block; font-size: 12px; margin-bottom: 6px; }
+.exercise-demo-unavailable { font-size: 12px; color: #53685c; margin: 0; padding: 10px 16px; }
+.exercise-static-poses { display: grid; grid-template-columns: 1fr 1fr; }
+.exercise-static-poses figure { margin: 0; }
+.exercise-static-poses figcaption { font-size: 10px; margin-bottom: 12px; }
+@media (max-width: 700px) { .exercise-demo-layout { grid-template-columns: 1fr; gap: 18px; padding: 14px; } }
