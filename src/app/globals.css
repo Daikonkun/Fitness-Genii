@@ -841,3 +841,14 @@ textarea:focus {
 .exercise-static-poses figure { margin: 0; }
 .exercise-static-poses figcaption { font-size: 10px; margin-bottom: 12px; }
 @media (max-width: 700px) { .exercise-demo-layout { grid-template-columns: 1fr; gap: 18px; padding: 14px; } }
+
+.equipment-input { min-width: 0; margin: 18px 0; padding: 18px; border: 1px solid var(--line, #d8ded5); border-radius: 14px; display: grid; gap: 16px; }
+.equipment-input legend { font-weight: 700; padding: 0 6px; }
+.equipment-options { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.equipment-options label { display: flex; align-items: center; gap: 8px; }
+.equipment-options input[type=checkbox] { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+.equipment-weight-row { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.equipment-input label { min-width: 0; }
+.equipment-input input, .equipment-input select { max-width: 100%; }
+.equipment-kit-controls { display: grid; gap: 12px; }
+@media (max-width: 620px) { .equipment-weight-row { grid-template-columns: 1fr; } .equipment-input { padding: 12px; } }

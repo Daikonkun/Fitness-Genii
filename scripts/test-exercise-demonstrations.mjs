@@ -208,6 +208,26 @@ try {
   assert.equal(rpcCalls, 1);
   assert.deepEqual(savedPayload.p_plan_json.sections[0].items.map(i => i.exercise_id), balanced.sections[0].items.map(i => i.exercise_id));
   rpcCalls = 0;
+  const { serializeEquipment, emptyEquipment } = load("src/lib/equipmentConfig.ts");
+  testEquipment=serializeEquipment({...emptyEquipment(),selected:["dumbbells"],primary:"dumbbells",dumbbells:{weight:5,unit:"kg",count:2}});
+  const weighted=structuredClone(plan);
+  weighted.sections[0].items[0].exercise_id="dumbbell-floor-press";
+  globalThis.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:JSON.stringify({status:"ready",reason_en:"",reason_zh:"",plan:weighted})}}]}));
+  const controlled=await POST(new Request("http://localhost/api/plans/generate",{method:"POST",body:"{}"}));
+  assert.equal(controlled.status,200);
+  assert.ok(savedPayload.p_plan_json.sections[0].items[0].prescription.includes("5 kg per dumbbell"));
+  assert.ok(structuredPlanSchema.safeParse(savedPayload.p_plan_json).success);
+  rpcCalls=0;
+  weighted.sections[0].items[0].prescription="3 sets with 20kg";
+  const fabricated=await POST(new Request("http://localhost/api/plans/generate",{method:"POST",body:"{}"}));
+  assert.equal(fabricated.status,422);
+  assert.equal((await fabricated.json()).code,"uncontrolled_load");
+  assert.equal(rpcCalls,0);
+  testEquipment="equipment:v1:{broken";
+  globalThis.fetch=async()=>{throw Error("Invalid equipment must be rejected before model call");};
+  const badEquipment=await POST(new Request("http://localhost/api/plans/generate",{method:"POST",body:"{}"}));
+  assert.equal(badEquipment.status,422);
+  assert.equal(rpcCalls,0);
   testEquipment = "none";
   globalThis.fetch = async () =>
     new Response(

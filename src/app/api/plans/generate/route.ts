@@ -1,3 +1,4 @@
+import { readEquipmentConfig, isStructuredEquipment, loadCaption, hasGeneratedLoad } from "@/lib/equipmentConfig";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getHongKongDate } from "@/lib/date";
@@ -105,6 +106,9 @@ export async function POST(request: Request) {
       { status: 422 }
     );
   }
+
+  const equipmentConfig = readEquipmentConfig(target.equipment);
+  if (isStructuredEquipment(target.equipment) && !equipmentConfig) return NextResponse.json({error:"Equipment settings are invalid. Please save them again. / 器材設定無效，請重新儲存。",code:"invalid_equipment"},{status:422});
 
   const weightLogs = ((weightsResult.data as WeightLog[] | null) ?? []).reverse();
   const records = (recordsResult.data as ExerciseRecord[] | null) ?? [];
@@ -247,6 +251,18 @@ export async function POST(request: Request) {
   const missingFocus = missingKitFocus(structuredPlan.sections.filter(section => section.section_type === "main_workout").flatMap(section => section.items.map(item => getExercise(item.exercise_id)!)), target.equipment);
   if (missingFocus.length) {
     return NextResponse.json({ error: "The primary-kit plan did not cover chest, back and core. The current plan is unchanged. / 主力器材計劃未涵蓋胸、背及核心；原計劃保持不變。", code: "kit_focus_missing", missing: missingFocus }, { status: 422 });
+  }
+  if (equipmentConfig) {
+    const text = [structuredPlan.title_en,structuredPlan.title_zh,structuredPlan.completion_suggestion_en,structuredPlan.completion_suggestion_zh,...structuredPlan.sections.flatMap(section=>[section.title_en,section.title_zh,...section.items.map(item=>item.prescription)])].join(" ");
+    if (hasGeneratedLoad(text)) return NextResponse.json({error:"Generated weight instructions conflict with controlled equipment inputs. Your current plan is unchanged. / 產生的重量指示不符合器材控制設定；原計劃不變。",code:"uncontrolled_load"},{status:422});
+    for (const section of structuredPlan.sections) for (const item of section.items) {
+      const caption=loadCaption(getExercise(item.exercise_id)!,equipmentConfig);
+      if (caption) {
+        const prescribed = `${item.prescription} · ${caption}`;
+        if (prescribed.length > 240) return NextResponse.json({error:"The generated prescription is too long to include its equipment label. Please retry. / 指定訓練文字過長，無法加入器材標示，請重試。",code:"prescription_too_long"},{status:422});
+        item.prescription = prescribed;
+      }
+    }
   }
   const planMarkdown = structuredPlanToMarkdown(structuredPlan);
 

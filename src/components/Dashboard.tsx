@@ -26,7 +26,9 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { formatStopwatch, workoutMetrics } from "@/lib/workout";
-import { bandSetups, bandSetup, equipmentDescription, withBandSetup, type BandSetup } from "@/lib/exercises/equipment";
+import { bandSetup, equipmentDescription } from "@/lib/exercises/equipment";
+import { EquipmentInput } from "@/components/EquipmentInput";
+import { readEquipmentConfig, isStructuredEquipment, emptyEquipment, equipmentConfigSchema, serializeEquipment, type EquipmentConfig } from "@/lib/equipmentConfig";
 import { WorkoutPlan } from "@/components/WorkoutPlan";
 import type {
   BodyStatus,
@@ -71,6 +73,16 @@ export function Dashboard({ data }: { data: DashboardData }) {
       equipment: "none"
     }
   );
+  const [equipment, setEquipment] = useState<EquipmentConfig>(() => {
+    const saved=readEquipmentConfig(data.target?.equipment);
+    if (saved) return saved;
+    const initial=emptyEquipment();
+    if (bandSetup(data.target?.equipment) === "innstar_primary") return {...initial,selected:["kit","bodyweight"],primary:"kit",kit:{rating:null,unit:"kg",basis:"unknown",tubesPerSide:null}};
+    if (data.target?.equipment && !/^(none|bodyweight|無|无)$/i.test(data.target.equipment.trim())) initial.selected=[];
+    return initial;
+  });
+  const equipmentResult=equipmentConfigSchema.safeParse(equipment);
+  const equipmentDirty=!equipmentResult.success || serializeEquipment(equipmentResult.data) !== target.equipment;
   const [todayPlan, setTodayPlan] = useState<DailyPlan | null>(data.todayPlan);
   const [planItems, setPlanItems] = useState<PlanItem[]>(data.todayPlanItems);
   const [intervals, setIntervals] = useState<ExerciseInterval[]>(data.todayIntervals);
@@ -109,6 +121,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
   async function saveInputs() {
     setNotice(null);
+    if (!equipmentResult.success) {
+      setNotice({type:"error",message:"Select equipment and enter positive dumbbell weights where required. / 請選擇器材，並填寫所需的正數啞鈴重量。"});
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
 
@@ -128,7 +144,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         goal_description: target.goal_description,
         exercise_minutes: target.exercise_minutes,
         focus: target.focus || null,
-        equipment: target.equipment || null
+        equipment: serializeEquipment(equipmentResult.data)
       };
 
       const { error: bodyError } = await supabase
@@ -162,6 +178,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         return;
       }
 
+      setTarget({...target, equipment:normalizedTarget.equipment});
       setNotice({ type: "success", message: "Inputs saved. You can generate today's plan." });
     } finally {
       setSaving(false);
@@ -169,6 +186,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
   }
 
   async function generatePlan() {
+    if (equipmentDirty) { setNotice({type:"error",message:"Save equipment inputs before generating. / 請先儲存器材設定再產生計劃。"}); return; }
     setGenerating(true);
     setNotice(null);
 
@@ -467,22 +485,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
                 placeholder="Chest, legs, core..."
               />
             </label>
-            <label>
-              Equipment
-              <input
-                value={equipmentDescription(target.equipment)}
-                onChange={(event) => setTarget({ ...target, equipment: withBandSetup(event.target.value, bandSetup(target.equipment)) })}
-                placeholder="None, dumbbells, handled tubes..."
-              />
-            </label>
-            <label>
-              Band setup / 彈力帶裝配
-              <select value={bandSetup(target.equipment)} onChange={(event) => setTarget({ ...target, equipment: withBandSetup(target.equipment ?? "", event.target.value as BandSetup) })}>
-                {Object.entries(bandSetups).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <small>The INNSTAR primary preset includes the padded chest unit, bar, handles and foot straps, and plans chest, back and core work. Other setups keep their own compatible movements.<br />INNSTAR 主力預設包含胸推背墊、橫桿、手柄及腳套，安排胸、背及核心訓練；其他裝配使用各自適用的動作。</small>
-            </label>
           </div>
+          {!readEquipmentConfig(target.equipment) && target.equipment && <p className="muted">Previous equipment / 原有器材：{isStructuredEquipment(target.equipment) ? "Settings could not be read / 設定無法讀取" : equipmentDescription(target.equipment)}. Review the selections and weights before saving / 請確認選項及重量後儲存。</p>}
+          <EquipmentInput value={equipment} onChange={setEquipment} />
+          {equipmentDirty && <p className="muted">Save inputs to use these equipment settings / 儲存後才會使用新器材設定。</p>}
           <button
             className="secondary-button"
             type="button"
@@ -504,7 +510,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
               className="primary-button"
               type="button"
               onClick={generatePlan}
-              disabled={generating}
+              disabled={generating || equipmentDirty || saving}
             >
               {generating ? <Loader2 className="spin" size={16} /> : <Sparkles size={16} />}
               {todayPlan ? "Regenerate plan" : "Generate plan"}

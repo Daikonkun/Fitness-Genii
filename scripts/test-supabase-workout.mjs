@@ -74,6 +74,11 @@ try {
     "create target"
   );
 
+  const equipmentValue='equipment:v1:'+JSON.stringify({version:1,selected:["kit","dumbbells"],primary:"kit",kit:{rating:6,unit:"kg",basis:"unknown",tubesPerSide:null},dumbbells:{weight:5,unit:"kg",count:2},supports:{chair:false,wall:false}});
+  await expectNoError(await owner.client.from("exercise_targets").update({equipment:equipmentValue}).eq("id",target.id), "save structured equipment");
+  const equipmentRoundTrip=await expectNoError(await owner.client.from("exercise_targets").select("equipment").eq("id",target.id).single(), "reload structured equipment");
+  assert.equal(equipmentRoundTrip.equipment,equipmentValue);
+
   const planJson = {
     title_en: "QA workout",
     title_zh: "測試訓練",

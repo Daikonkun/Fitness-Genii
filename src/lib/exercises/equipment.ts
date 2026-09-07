@@ -1,3 +1,4 @@
+import { readEquipmentConfig, isStructuredEquipment, configAllows } from "../equipmentConfig";
 import type { ExerciseDefinition } from "./catalogue";
 
 // Persist the explicit selection in the existing equipment text for old callers.
@@ -12,6 +13,8 @@ export const bandSetups = {
 export type BandSetup = keyof typeof bandSetups;
 const marker = /\[band-setup:(unspecified|flat|foot_straps|both|innstar_primary)\]/g;
 export function bandSetup(value: string | null | undefined): BandSetup {
+  const config = readEquipmentConfig(value);
+  if (config) return config.selected.includes("kit") ? (config.primary === "kit" ? "innstar_primary" : "foot_straps") : "unspecified";
   const matches = [...(value ?? "").matchAll(marker)];
   return matches.length === 1 ? matches[0][1] as BandSetup : "unspecified";
 }
@@ -22,6 +25,9 @@ export function withBandSetup(description: string, setup: BandSetup) {
   return `${equipmentDescription(description)} [band-setup:${setup}]`.trim();
 }
 export function bandEquipmentCompatible(exercise: ExerciseDefinition, equipment: string | null | undefined) {
+  const config = readEquipmentConfig(equipment);
+  if (config) return configAllows(exercise, config);
+  if (isStructuredEquipment(equipment)) return false;
   const setup = bandSetup(equipment);
   if (exercise.equipment.includes("band")) return setup === "flat" || setup === "both";
   if (exercise.equipment.some(part => part === "padded-chest-expander" || part === "kit-bar")) return setup === "innstar_primary";
