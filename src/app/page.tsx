@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Dashboard } from "@/components/Dashboard";
 import { getHongKongDate } from "@/lib/date";
+import { fetchExerciseRecordsMonth, RECORDS_LOAD_ERROR } from "@/lib/exerciseRecords";
 import { createClient } from "@/lib/supabase/server";
 import type {
   BodyStatus,
@@ -45,12 +46,9 @@ export default async function Home() {
       .eq("user_id", user.id)
       .order("logged_on", { ascending: false })
       .limit(30),
-    supabase
-      .from("exercise_records")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("record_date", { ascending: false })
-      .limit(20),
+    fetchExerciseRecordsMonth(supabase, user.id, todayHk.slice(0, 7))
+      .then((data) => ({ data, error: null }))
+      .catch(() => ({ data: [], error: RECORDS_LOAD_ERROR })),
     supabase
       .from("daily_plans")
       .select("*")
@@ -89,6 +87,7 @@ export default async function Home() {
         target: (targetResult.data as ExerciseTarget | null) ?? null,
         weightLogs: ((weightLogsResult.data as WeightLog[] | null) ?? []).reverse(),
         records: (recordsResult.data as ExerciseRecord[] | null) ?? [],
+        recordsError: recordsResult.error,
         todayPlan,
         todayPlanItems,
         todayIntervals: (todayIntervalsResult.data ?? []) as ExerciseInterval[]

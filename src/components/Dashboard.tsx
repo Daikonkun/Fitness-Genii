@@ -4,7 +4,6 @@ import {
   Activity,
   CalendarCheck,
   Dumbbell,
-  History,
   Loader2,
   LogOut,
   RefreshCw,
@@ -14,7 +13,7 @@ import {
   TrendingDown,
   UserRound
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useReducer, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -30,6 +29,9 @@ import { bandSetup, equipmentDescription } from "@/lib/exercises/equipment";
 import { EquipmentInput } from "@/components/EquipmentInput";
 import { readEquipmentConfig, isStructuredEquipment, emptyEquipment, equipmentConfigSchema, serializeEquipment, type EquipmentConfig } from "@/lib/equipmentConfig";
 import { WorkoutPlan } from "@/components/WorkoutPlan";
+import { ExerciseRecordsCalendar } from "@/components/ExerciseRecordsCalendar";
+import { calendarReducer, createCalendarState } from "@/lib/exerciseCalendar";
+import { fetchExerciseRecordsMonth, RECORDS_LOAD_ERROR } from "@/lib/exerciseRecords";
 import type {
   BodyStatus,
   DailyPlan,
@@ -86,7 +88,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [todayPlan, setTodayPlan] = useState<DailyPlan | null>(data.todayPlan);
   const [planItems, setPlanItems] = useState<PlanItem[]>(data.todayPlanItems);
   const [intervals, setIntervals] = useState<ExerciseInterval[]>(data.todayIntervals);
-  const [records, setRecords] = useState<ExerciseRecord[]>(data.records);
+  const [calendar, dispatchCalendar] = useReducer(calendarReducer, data, (initial) =>
+    createCalendarState(initial.todayHk.slice(0, 7), initial.records, initial.recordsError)
+  );
+  const calendarRequestId = useRef(0);
   const [feedback, setFeedback] = useState("");
   const [executed, setExecuted] = useState(false);
   const [completion, setCompletion] = useState(todayPlan?.completion_percentage ?? 0);
@@ -96,6 +101,17 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [finishing, setFinishing] = useState(false);
+
+  async function loadRecordsMonth(month: string) {
+    const requestId = ++calendarRequestId.current;
+    dispatchCalendar({ type: "load", month, requestId });
+    try {
+      const records = await fetchExerciseRecordsMonth(createClient(), data.userId, month);
+      dispatchCalendar({ type: "loaded", requestId, records });
+    } catch {
+      dispatchCalendar({ type: "failed", requestId, error: RECORDS_LOAD_ERROR });
+    }
+  }
 
   const chartData = useMemo(
     () =>
@@ -266,10 +282,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
       return;
     }
 
-    setRecords((current) => [
-      savedRecord as ExerciseRecord,
-      ...current.filter((record) => record.plan_id !== todayPlan.id)
-    ]);
+    dispatchCalendar({ type: "saved", record: savedRecord as ExerciseRecord });
     setTodayPlan({ ...todayPlan, status, completion_percentage: percentage });
     setNotice({ type: "success", message: "Exercise record saved." });
   }
@@ -311,10 +324,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
       if (intervalResult.error) throw new Error(intervalResult.error.message);
       if (recordResult.error) throw new Error(recordResult.error.message);
       setIntervals((intervalResult.data ?? []) as ExerciseInterval[]);
-      setRecords((current) => [
-        recordResult.data as ExerciseRecord,
-        ...current.filter((record) => record.plan_id !== todayPlan.id)
-      ]);
+      dispatchCalendar({ type: "saved", record: recordResult.data as ExerciseRecord });
 
       setNotice({
         type: "success",
@@ -670,32 +680,12 @@ export function Dashboard({ data }: { data: DashboardData }) {
           )}
         </section>
 
-        <section className="panel records-panel">
-          <div className="panel-heading">
-            <History size={18} />
-            <h2>Exercise records</h2>
-          </div>
-          <div className="record-list">
-            {records.length ? (
-              records.map((record) => (
-                <article className="record-item" key={record.id}>
-                  <div>
-                    <strong>{record.record_date}</strong>
-                    <p>{record.activity_summary}</p>
-                  </div>
-                  <span className={`record-badge ${record.status}`}>{record.status}</span>
-                  <span>{record.duration_minutes} min</span>
-                  <span>{record.completion_percentage}%</span>
-                </article>
-              ))
-            ) : (
-              <div className="empty-state">
-                <History size={22} />
-                <p>Executed and unfinished plans will appear here.</p>
-              </div>
-            )}
-          </div>
-        </section>
+        <ExerciseRecordsCalendar
+          state={calendar}
+          today={data.todayHk}
+          onMonthChange={loadRecordsMonth}
+          onRetry={() => loadRecordsMonth(calendar.month)}
+        />
       </section>
     </main>
   );

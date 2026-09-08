@@ -125,6 +125,7 @@ export type DashboardData = {
   target: ExerciseTarget | null;
   weightLogs: WeightLog[];
   records: ExerciseRecord[];
+  recordsError?: string | null;
   todayPlan: DailyPlan | null;
   todayPlanItems: PlanItem[];
   todayIntervals: ExerciseInterval[];
