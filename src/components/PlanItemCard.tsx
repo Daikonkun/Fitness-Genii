@@ -2,7 +2,7 @@
 
 import { ExerciseSketch } from "@/components/ExerciseSketch";
 import { resolveExercise } from "@/lib/exercises/catalogue";
-import { Check, Clock3, Pause, Play } from "lucide-react";
+import { Check, Clock3, Flag, Pause, Play } from "lucide-react";
 import { formatStopwatch } from "@/lib/workout";
 import type { PlanItem } from "@/lib/types";
 
@@ -11,21 +11,27 @@ type PlanItemCardProps = {
   demonstrationOpen?: boolean;
   onDemonstrationToggle?: () => void;
   elapsedSeconds: number;
+  lapSeconds?: number;
+  lapNumber?: number;
   active: boolean;
   interactive?: boolean;
   busy?: boolean;
   onToggle?: () => void;
   onDone?: () => void;
+  onLap?: () => void;
 };
 
 export function PlanItemCard({
   item,
   elapsedSeconds,
+  lapSeconds = elapsedSeconds,
+  lapNumber = 1,
   active,
   interactive = false,
   busy = false,
   onToggle,
   onDone,
+  onLap,
   demonstrationOpen = false,
   onDemonstrationToggle
 }: PlanItemCardProps) {
@@ -37,17 +43,18 @@ export function PlanItemCard({
 
   return (
     <article className={`plan-item-card ${state}`}>
-      <button
-        className="plan-item-main"
-        type="button"
-        aria-pressed={active}
-        aria-label={`${active ? "Pause" : "Start"} ${item.title_en}. Elapsed ${formatStopwatch(elapsedSeconds)}`}
-        disabled={!interactive || busy || done}
-        onClick={onToggle}
-      >
-        <span className="plan-item-action" aria-hidden="true">
-          {active ? <Pause size={18} /> : <Play size={18} />}
-        </span>
+      <div className="plan-item-main">
+        <div className="plan-item-controls">
+          <button className="plan-item-action" type="button" aria-pressed={active && !done}
+            aria-label={`${active && !done ? "Pause" : "Start"}: ${item.title_en}`}
+            disabled={!interactive || busy || done} onClick={onToggle}>
+            {active && !done ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
+          </button>
+          <button className="plan-item-lap" type="button" aria-label={`New lap: ${item.title_en}`}
+            disabled={!interactive || busy || done || !active} onClick={onLap}>
+            <Flag size={14} aria-hidden="true" /> Lap
+          </button>
+        </div>
         <span className="plan-item-copy">
           <strong>{item.title_en}</strong>
           <span className="plan-item-zh">{item.title_zh}</span>
@@ -55,12 +62,12 @@ export function PlanItemCard({
           <span>{item.description_zh}</span>
           <span className="plan-item-prescription">{item.prescription}</span>
         </span>
-        <span className="plan-item-timer" aria-live={active ? "off" : "polite"}>
-          <Clock3 size={15} aria-hidden="true" />
-          {formatStopwatch(elapsedSeconds)}
-          <small>{stateLabel}</small>
-        </span>
-      </button>
+        <div className="plan-item-timers" aria-live={active && !done ? "off" : "polite"}>
+          <div className="plan-item-timer"><small>Total</small><span><Clock3 size={15} aria-hidden="true" /> {formatStopwatch(elapsedSeconds)}</span></div>
+          <div className="plan-item-timer lap"><small>Lap {lapNumber}</small><span>{formatStopwatch(lapSeconds)}</span></div>
+          <small className="plan-item-timer-state">{stateLabel}</small>
+        </div>
+      </div>
       <button
         className="plan-item-done"
         type="button"

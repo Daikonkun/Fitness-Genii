@@ -103,6 +103,8 @@ export type PlanItem = StructuredPlanItem & {
   section_position: number;
   item_position: number;
   completed_at: string | null;
+  lap_number: number;
+  lap_start_total_seconds: number;
   created_at: string;
 };
 

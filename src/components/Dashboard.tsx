@@ -539,6 +539,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             {todayPlan ? (
               todayPlan.schema_version >= 2 && planItems.length ? (
                 <WorkoutPlan
+                  key={todayPlan.id}
                   planId={todayPlan.id}
                   items={planItems}
                   intervals={intervals}

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { loadTypeScriptModule as load } from "./lib/load-typescript.mjs";
 const loadTypeScriptModule = (file) => load(new URL(file, import.meta.url).pathname);
 
-const { formatStopwatch, intervalSeconds, itemElapsedSeconds, workoutMetrics } =
+const { formatStopwatch, intervalSeconds, itemElapsedSeconds, itemStopwatch, workoutMetrics } =
   loadTypeScriptModule("../src/lib/workout.ts");
 const { structuredPlanSchema, structuredPlanToMarkdown } = loadTypeScriptModule(
   "../src/lib/planSchema.ts"
@@ -75,3 +75,28 @@ assert.equal(structuredPlanSchema.safeParse({ ...validPlan, sections: [] }).succ
 assert.match(structuredPlanToMarkdown(validPlan), /March in place \/ 原地踏步/);
 
 console.log("Workout timing and structured plan tests passed.");
+
+// First lap shares total time; lap boundaries do not split or double-count intervals.
+assert.deepEqual(itemStopwatch(baseItem, [closedInterval, activeInterval], nowMs), {
+  totalSeconds: 100, lapSeconds: 100, lapNumber: 1
+});
+const lapItem = { ...baseItem, lap_number: 2, lap_start_total_seconds: 90 };
+assert.deepEqual(itemStopwatch(lapItem, [closedInterval, activeInterval], nowMs), {
+  totalSeconds: 100, lapSeconds: 10, lapNumber: 2
+});
+assert.deepEqual(itemStopwatch(lapItem, [closedInterval], nowMs + 60000), {
+  totalSeconds: 65, lapSeconds: 0, lapNumber: 2
+});
+const doneItem = { ...lapItem, completed_at: new Date(nowMs).toISOString() };
+assert.deepEqual(itemStopwatch(doneItem, [closedInterval, activeInterval], nowMs + 60000), {
+  totalSeconds: 100, lapSeconds: 10, lapNumber: 2
+});
+const paused = { ...activeInterval, ended_at: new Date(nowMs).toISOString(), duration_seconds: 35 };
+assert.deepEqual(itemStopwatch(lapItem, [closedInterval, paused], nowMs + 60000), {
+  totalSeconds: 100, lapSeconds: 10, lapNumber: 2
+});
+const resumed = { ...activeInterval, started_at: new Date(nowMs + 60000).toISOString() };
+assert.deepEqual(itemStopwatch(lapItem, [closedInterval, paused, resumed], nowMs + 75000), {
+  totalSeconds: 115, lapSeconds: 25, lapNumber: 2
+});
+console.log("Lap stopwatch tests passed.");

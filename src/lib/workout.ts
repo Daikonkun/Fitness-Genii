@@ -30,6 +30,17 @@ export function workoutMetrics(items: PlanItem[], intervals: ExerciseInterval[],
   };
 }
 
+export function itemStopwatch(item: PlanItem, intervals: ExerciseInterval[], nowMs = Date.now()) {
+  // A completed item must stay frozen even if a stale response still has an open interval.
+  const cutoff = item.completed_at ? Math.min(nowMs, Date.parse(item.completed_at)) : nowMs;
+  const totalSeconds = itemElapsedSeconds(item.id, intervals, cutoff);
+  return {
+    totalSeconds,
+    lapSeconds: Math.max(0, totalSeconds - (item.lap_start_total_seconds ?? 0)),
+    lapNumber: item.lap_number ?? 1
+  };
+}
+
 export function formatStopwatch(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(safeSeconds / 3600);

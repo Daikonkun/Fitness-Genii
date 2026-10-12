@@ -20,6 +20,8 @@ export default function ExerciseReviewPage() {
     prescription: "Demo review / 示範檢查",
     planned_seconds: 60,
     completed_at: index === 1 ? "2026-09-07T00:00:00Z" : null,
+    lap_number: 1,
+    lap_start_total_seconds: 0,
     created_at: "2026-09-07T00:00:00Z"
   }));
   return (

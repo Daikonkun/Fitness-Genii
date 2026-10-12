@@ -18,7 +18,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:exercises": "node scripts/test-exercise-demonstrations.mjs",
-    "test:equipment": "node scripts/test-equipment.mjs"
+    "test:equipment": "node scripts/test-equipment.mjs",
+    "test:laps:db": "node scripts/test-lap-postgres.mjs",
+    "test:laps:browser": "node scripts/test-lap-browser.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.10.2",
